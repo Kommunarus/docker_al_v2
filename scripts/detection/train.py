@@ -28,6 +28,9 @@ def get_transform():
     transforms = [t.ToTensor()]
     return t.Compose(transforms)
 
+def eval_mape(model0, data_loader_test, device):
+    coco_evaluator = evaluate(model0, data_loader_test, device=device)
+    return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox']), 'model': model0}
 
 def train_model(pathtoimg, pathtolabelstrain,
                 pathtoimgval, pathtolabelsval,
@@ -36,6 +39,13 @@ def train_model(pathtoimg, pathtolabelstrain,
     write_to_log('in train {} samples'.format(len(set(images_train))))
     ds0 = Dataset_objdetect(pathtoimg, images_train, annotations_train, transforms=get_transform())
     train_dataloader = DataLoader(ds0, batch_size=8, shuffle=True, collate_fn=utils.collate_fn)
+
+    if use_val_test:
+        images_test, annotations_test = prepare_items_od(pathtoimgval, pathtolabelsval)
+        write_to_log('in val {} samples'.format(len(set(images_test))))
+        dataset_test = Dataset_objdetect(pathtoimgval, images_test, annotations_test, get_transform(), name='val')
+        data_loader_test = DataLoader(dataset_test, batch_size=32, shuffle=False, collate_fn=utils.collate_fn)
+
 
     num_classes = 2
     best_model = None
@@ -52,9 +62,9 @@ def train_model(pathtoimg, pathtolabelstrain,
         # print('epoch {}'.format(epoch+1))
         train_one_epoch(model, optimizer, train_dataloader, device, epoch, print_freq=100)
         if use_val_test:
-            outval = mAP(model, pathtolabelsval, pathtoimgval, device)
+            outval = eval_mape(model, data_loader_test, device)
         else:
-            outval = mAP(model, pathtolabelstrain, pathtoimg, device)
+            outval = eval_mape(model, train_dataloader, device)
 
         mape = outval['mAP(0.5:0.95)']
         if best_mape < mape:

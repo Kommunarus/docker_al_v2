@@ -89,8 +89,6 @@ class Evaluate(Resource):
         retrain = reqparse.request.args['retrain_user_model']
         retrain = True if retrain == 'T' else False
 
-
-
         return make_eval(path_to_img_train, path_to_labels_train, path_to_img_val, path_to_labels_val,
               path_to_labels_test, path_to_img_test, device, pretrain, save_model, path_model, retrain)
 
