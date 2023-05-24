@@ -51,10 +51,9 @@ def mAP():
 
 if __name__ == '__main__':
     # p = [1_000, 10_000, 30_000]
-    path_to_img_train = '/media/alex/DAtA3/Datasets/coco/my_dataset/train'
-
-    N_train = len(os.listdir(path_to_img_train))
-    n_rnd = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2, N_train]
+    N_train = len(os.listdir('/home/neptun/PycharmProjects/datasets/coco/my_dataset/train'))
+    n_rnd = [N_train // 64]
+    # n_rnd = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2, N_train]
     start = datetime.datetime.now()
     print(start)
     told = start
@@ -65,8 +64,11 @@ if __name__ == '__main__':
         m = []
         for j in range(k):
             make_file(i,
-                      path_to_json_train='/media/alex/DAtA3/Datasets/coco/my_dataset/labels_train/train.json',
-                      path_to_out='/media/alex/DAtA3/Datasets/coco/labelstrain/first.json')
+                      path_to_json_train='/home/neptun/PycharmProjects/datasets/coco/my_dataset/labels_train/train.json',
+                      path_to_out='/home/neptun/PycharmProjects/datasets/coco/labelstrain/first.json')
+            # make_file(i,
+            #           path_to_json_train='/media/alex/DAtA3/Datasets/coco/my_dataset/labels_train/train.json',
+            #           path_to_out='/media/alex/DAtA3/Datasets/coco/labelstrain/first.json')
             f = mAP()
             print(f)
             mean += f

@@ -1,6 +1,7 @@
 from scripts.detection.engine import evaluate
 from scripts.detection.train import train_model
 from scripts.detection.unit import Dataset_objdetect, prepare_items_od
+from scripts.detection.train import train_custom
 from torch.utils.data import DataLoader
 import scripts.detection.utils as utils
 from torchvision import transforms as t
@@ -17,51 +18,10 @@ def get_transform():
     transforms = [t.ToTensor()]
     return t.Compose(transforms)
 
-
-def eval(path_to_img_train, path_to_labels_train,
+def eval_faster(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,
-         path_to_labels_test, path_to_img_test,
-         device_rest, save_model, pretrain=True, path_model='', retrain=False):
-    write_to_log('param:')
-    write_to_log('path_to_img_train: {}'.format(path_to_img_train))
-    list_file = os.listdir(path_to_img_train)
-    write_to_log('count train files: {}'.format(len(list_file)))
-
-    write_to_log('path_to_labels_train: {}'.format(path_to_labels_train))
-    p = pathlib.Path(path_to_labels_train)
-    stat_info = p.stat()
-    write_to_log('size train annotation: {}'.format(stat_info.st_size))
-
-    write_to_log('path_to_img_val: {}'.format(path_to_img_val))
-    list_file = os.listdir(path_to_img_val)
-    write_to_log('count val files: {}'.format(len(list_file)))
-
-    write_to_log('path_to_labels_val: {}'.format(path_to_labels_val))
-    p = pathlib.Path(path_to_labels_val)
-    stat_info = p.stat()
-    write_to_log('size val annotation: {}'.format(stat_info.st_size))
-
-    write_to_log('path_to_labels_test: {}'.format(path_to_labels_test))
-    list_file = os.listdir(path_to_img_val)
-    write_to_log('count test files: {}'.format(len(list_file)))
-
-    write_to_log('path_to_img_test: {}'.format(path_to_img_test))
-    p = pathlib.Path(path_to_img_test)
-    stat_info = p.stat()
-    write_to_log('size val annotation: {}'.format(stat_info.st_size))
-
-    write_to_log('device_rest: {}'.format(device_rest))
-    write_to_log('save_model: {}'.format(save_model))
-    write_to_log('pretrain: {}'.format(pretrain))
-    write_to_log('path_model: {}'.format(path_model))
-    write_to_log('retrain: {}'.format(retrain))
-
-
-    device = f"cuda:{device_rest}" if torch.cuda.is_available() else "cpu"
-    path_do_dir_model = '/weight'
-    write_to_log('eval')
-    write_to_log(device)
-
+         path_to_labels_test, path_to_img_test, device,
+         save_model, pretrain, path_model, retrain, path_do_dir_model):
     if path_model == '':
         write_to_log('start train model')
         model0 = train_model(path_to_img_train, path_to_labels_train,
@@ -86,12 +46,10 @@ def eval(path_to_img_train, path_to_labels_train,
         else:
             return {'info': 'weight not exist'}
 
-
     images_test, annotations_test = prepare_items_od(path_to_labels_test, path_to_img_test)
     dataset_test = Dataset_objdetect(path_to_labels_test, images_test, annotations_test, get_transform(), name='test')
     data_loader_test = DataLoader(dataset_test, batch_size=32, shuffle=False, collate_fn=utils.collate_fn)
     write_to_log('in test {} samples'.format(len(set(images_test))))
-
 
     coco_evaluator = evaluate(model0, data_loader_test, device=device)
     if save_model:
@@ -101,7 +59,54 @@ def eval(path_to_img_train, path_to_labels_train,
                 'model': path_model}
     else:
         return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox'])}
-    # return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox'])}
+
+def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_labels_test, path_to_img_test,
+                pretrain, path_model, retrain, device, save_model):
+    if path_model == '':
+        write_to_log('start train model')
+        path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain)
+    elif retrain:
+        write_to_log('load and train model')
+        if os.path.exists(path_model):
+            path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, path_model)
+        else:
+            return {'info': 'weight not exist'}
+    else:
+        write_to_log('load model')
+        if os.path.exists(path_model):
+            pass
+        else:
+            return {'info': 'weight not exist'}
+
+
+    images_test, annotations_test = prepare_items_od(path_to_labels_test, path_to_img_test)
+    dataset_test = Dataset_objdetect(path_to_labels_test, images_test, annotations_test, get_transform(), name='test')
+    data_loader_test = DataLoader(dataset_test, batch_size=32, shuffle=False, collate_fn=utils.collate_fn)
+    write_to_log('in test {} samples'.format(len(set(images_test))))
+
+    coco_evaluator = evaluate(model0, data_loader_test, device=device)
+    if save_model:
+        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox']),
+                'model': path_model}
+    else:
+        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox'])}
+
+def eval(path_to_img_train, path_to_labels_train,
+         path_to_img_val, path_to_labels_val,
+         path_to_labels_test, path_to_img_test,
+         device_rest, save_model, pretrain=True, path_model='', retrain=False, type_model='yolo'):
+
+    device = f"cuda:{device_rest}" if torch.cuda.is_available() else "cpu"
+    path_do_dir_model = '/weight'
+    write_to_log('eval')
+    write_to_log(device)
+    if type_model == 'fasterrcnn':
+        return eval_faster(path_to_img_train, path_to_labels_train,
+         path_to_img_val, path_to_labels_val,
+         path_to_labels_test, path_to_img_test, device_rest,
+         save_model, pretrain, path_model, retrain, path_do_dir_model)
+    else:
+        return eval_custom()
 
 
 def _summarize(coco, ap=1, iouThr=None, areaRng='all', maxDets=100):

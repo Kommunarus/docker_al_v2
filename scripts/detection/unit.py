@@ -12,6 +12,7 @@ import h5py
 import uuid
 import datetime
 
+
 mean = [0.4914, 0.4822, 0.4465]
 std = [0.2470, 0.2435, 0.2616]
 
@@ -24,6 +25,28 @@ data_transform = transforms.Compose([
 
 
 # Object detection
+def prepare_items_od_with_wh(path_to_img, path_to_labels):
+
+    if os.path.isfile(path_to_labels):
+        with open(path_to_labels) as f:
+            razmetka = json.load(f)
+
+        annotations = razmetka['annotations']
+        images = razmetka['images']
+    else:
+        annotations = []
+        images = []
+        for file in os.listdir(path_to_labels):
+            with open(os.path.join(path_to_labels, file)) as f:
+                razmetka = json.load(f)
+
+            annotations = annotations + razmetka['annotations']
+            images = images + razmetka['images']
+    images_short = [(row['file_name'], row['id'], row['width'], row['height']) for row in images]
+    annotations_short = [(row['bbox'], row['image_id']) for row in annotations]
+    images_short = list(set(images_short))
+    return images_short, annotations_short
+
 def prepare_items_od(path_to_img, path_to_labels):
 
     if os.path.isfile(path_to_labels):
@@ -50,7 +73,7 @@ def prepare_items_od(path_to_img, path_to_labels):
 
 
 class Dataset_objdetect(Dataset):
-    def __init__(self, path_to_img, images, annotations, transforms, path_to_h5='/data', name=''):
+    def __init__(self, path_to_img, images, annotations, transforms, path_to_h5=os.getcwd()+'/data', name=''):
         self.path_to_img = path_to_img
         count = 0
         if not annotations is None:
@@ -63,7 +86,7 @@ class Dataset_objdetect(Dataset):
                     new_images.append(row)
             self.images = new_images
 
-            self.transA = A.Compose([A.Resize(224, 224)], bbox_params=A.BboxParams(format='coco',
+            self.transA = A.Compose([A.Resize(640, 640)], bbox_params=A.BboxParams(format='coco',
                                                                                    label_fields=['class_labels']))
 
             # create h5
@@ -139,7 +162,7 @@ class Dataset_objdetect(Dataset):
                 crowed = np.array(list_crowed)
                 numer = np.array(list_num)
                 N= len(list_imgs)
-                f.create_dataset('images', data=images, shape=(N, 224, 224, 3))
+                f.create_dataset('images', data=images, shape=(N, 640, 640, 3))
                 f.create_dataset('boxes', data=boxes, shape=(N, pad, 4))
                 f.create_dataset('labels', data=labels, shape=(N, pad, 1))
                 f.create_dataset('areas', data=areas, shape=(N, pad, 1))
@@ -148,7 +171,7 @@ class Dataset_objdetect(Dataset):
 
             self.f5 = f
         else:
-            self.transB = A.Compose([A.Resize(224, 224)])
+            self.transB = A.Compose([A.Resize(640, 640)])
             self.images = images
             # create h5
             id_ds = str(uuid.uuid4())
@@ -170,7 +193,7 @@ class Dataset_objdetect(Dataset):
 
             N= len(list_imgs)
             images = np.array(list_imgs)
-            f.create_dataset('images', data=images, shape=(N, 224, 224, 3))
+            f.create_dataset('images', data=images, shape=(N, 640, 640, 3))
             self.create_dataset = True
 
             self.f5 = f
@@ -183,34 +206,12 @@ class Dataset_objdetect(Dataset):
     def __getitem__(self, idx):
         # шаг обучения
         if not self.annotations is None:
-            # imgx = self.images[idx]
-            # name_file = imgx[0]
-            # id_file = imgx[1]
-            # path = os.path.join(self.path_to_img, name_file)
-            #
-            # image = io.imread(path)
-            # boxs = [x[0] for x in self.annotations if x[1] == id_file]
-            #
-            # num_objs = len(boxs)
-            # class_labels = ['tag'] * num_objs
-            # transformed = self.transA(image=image, bboxes=boxs, class_labels=class_labels)
-            # transformed_image = transformed['image']
-            # transformed_bboxes = transformed['bboxes']
-            #
-            # transformed_bboxes = [[x[0], x[1], x[0]+x[2], x[1]+x[3]] for x in transformed_bboxes]
-            #
-            # boxes = torch.as_tensor(transformed_bboxes, dtype=torch.float32)
-            # labels = torch.ones((num_objs,), dtype=torch.int64)
-            #
-            #
-            # area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-            # iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
             images = self.f5.get('images')[idx, :]
             boxes = self.f5.get('boxes')[idx, :]
             labels = self.f5.get('labels')[idx, :]
             area = self.f5.get('areas')[idx, :]
             iscrowd = self.f5.get('crowed')[idx, :]
-            num = self.f5.get('num')[idx, :][0]
+            num = self.f5.get('num')[idx, 0]
 
             target = {}
             target["boxes"] = torch.tensor(boxes[:num])
@@ -233,7 +234,8 @@ class Dataset_objdetect(Dataset):
         return self.count
 
 def write_to_log(txt):
-    with open('/history.txt', 'a') as file:
+    path = os.getcwd() + '/history.txt'
+    with open(path, 'a') as file:
         file.write('{}\t{}\n'.format(datetime.datetime.now(), txt))
 
 if __name__ == '__main__':

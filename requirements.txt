@@ -20,3 +20,5 @@ pycocotools
 albumentations==1.3.0
 
 h5py
+
+fastapi==0.92.0

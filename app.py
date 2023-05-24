@@ -59,17 +59,22 @@ class ActiveLearning(Resource):
         quantile_min = float(reqparse.request.args['quantile_min'])
         quantile_max = float(reqparse.request.args['quantile_max'])
 
-        return make_train(path_to_img_train, path_to_labels_train,
-                     path_to_img_val, path_to_labels_val,
-                     add, device, path_model, batch_unlabeled, pretrain,
-                     save_model, use_val_test, retrain, selection_function, quantile_min, quantile_max)
+        # сеть для детекции, может быть одной из:
+        # yolo, fasterrcnn
+        type_model = reqparse.request.args['type_model']
+
+        return train_api(path_to_img_train, path_to_labels_train,
+                    path_to_img_val, path_to_labels_val,
+                    add, device, path_model, batch_unlabeled, pretrain,
+                    save_model, use_val_test, retrain, selection_function,
+                    quantile_min, quantile_max, type_model)
 
 
 class Evaluate(Resource):
     @staticmethod
     def get():
         write_to_log('start mape')
-        device = reqparse.request.args['gpu']
+        device = int(reqparse.request.args['gpu'])
         path_to_labels_train = reqparse.request.args['path_to_labels_train']
         path_to_img_train = reqparse.request.args['path_to_img_train']
         path_to_labels_val = reqparse.request.args['path_to_labels_val']
@@ -89,31 +94,21 @@ class Evaluate(Resource):
         retrain = reqparse.request.args['retrain_user_model']
         retrain = True if retrain == 'T' else False
 
-        return make_eval(path_to_img_train, path_to_labels_train, path_to_img_val, path_to_labels_val,
-              path_to_labels_test, path_to_img_test, device, pretrain, save_model, path_model, retrain)
+        type_model = reqparse.request.args['type_model']
 
-
-def make_train(path_to_img_train, path_to_labels_train,
-               path_to_img_val, path_to_labels_val,
-               add, device, path_model, batch_unlabeled, pretrain,
-               save_model, use_val_test, retrain, selection_function,
-               quantile_min, quantile_max):
-    out = train_api(path_to_img_train, path_to_labels_train,
-                    path_to_img_val, path_to_labels_val,
-                    add, device, path_model, batch_unlabeled, pretrain,
-                    save_model, use_val_test, retrain, selection_function,
-                    quantile_min, quantile_max)
-    return jsonify(out)
-
-
-def make_eval(path_to_img_train, path_to_labels_train, path_to_img_val, path_to_labels_val,
-              path_to_labels_test, path_to_img_test, device, pretrain, save_model, path_model, retrain):
-    out = eval(path_to_img_train, path_to_labels_train,
+        return eval(path_to_img_train, path_to_labels_train,
                 path_to_img_val, path_to_labels_val,
                 path_to_img_test, path_to_labels_test, device, save_model,
-                pretrain, path_model, retrain)
-    return jsonify(out)
+                pretrain, path_model, retrain, type_model)
 
+
+
+
+
+class CustomModel(Resource):
+    @staticmethod
+    def get():
+        pass
 
 api.add_resource(ActiveLearning, '/active_learning')
 api.add_resource(Evaluate, '/eval')
