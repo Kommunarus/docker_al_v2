@@ -73,10 +73,12 @@ def prepare_items_od(path_to_img, path_to_labels):
 
 
 class Dataset_objdetect(Dataset):
-    def __init__(self, path_to_img, images, annotations, transforms, path_to_h5=os.getcwd()+'/data', name=''):
+    def __init__(self, path_to_img, images, annotations, transforms, path_to_h5=os.getcwd()+'/data', name='',
+                 N=-1):
         self.path_to_img = path_to_img
         count = 0
-        if not annotations is None:
+        size = 640
+        if annotations is not None:
             new_id = []
             for row in annotations:
                 new_id.append(row[1])
@@ -86,8 +88,10 @@ class Dataset_objdetect(Dataset):
                     new_images.append(row)
             self.images = new_images
 
-            self.transA = A.Compose([A.Resize(640, 640)], bbox_params=A.BboxParams(format='coco',
-                                                                                   label_fields=['class_labels']))
+            # RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=0.0)
+            # A.Resize(640, 640)
+            self.transA = A.Compose([A.Resize(640, 640)],
+                                    bbox_params=A.BboxParams(format='coco',  label_fields=['class_labels']))
 
             # create h5
             if name != '':
@@ -108,7 +112,7 @@ class Dataset_objdetect(Dataset):
 
 
             if create_h5:
-                pad = 100
+                pad = 30
 
                 list_imgs = []
                 list_boxs = []
@@ -116,6 +120,7 @@ class Dataset_objdetect(Dataset):
                 list_area = []
                 list_crowed = []
                 list_num = []
+                list_name = []
                 for img in new_images:
                     name_file = img[0]
                     id_file = img[1]
@@ -152,6 +157,7 @@ class Dataset_objdetect(Dataset):
                     list_area.append(area)
                     list_crowed.append(iscrowd)
                     list_num.append(num_objs)
+                    list_name.append(name_file)
 
                     count += 1
 
@@ -168,6 +174,8 @@ class Dataset_objdetect(Dataset):
                 f.create_dataset('areas', data=areas, shape=(N, pad, 1))
                 f.create_dataset('crowed', data=crowed, shape=(N, pad, 1))
                 f.create_dataset('num', data=numer, shape=(N, 1))
+                asciiList = [n.encode("ascii", "ignore") for n in list_name]
+                f.create_dataset('name', shape=(N, 1), data=asciiList)
 
             self.f5 = f
         else:
@@ -198,7 +206,11 @@ class Dataset_objdetect(Dataset):
 
             self.f5 = f
 
-        self.count = len(self.f5.get('images')[:])
+        if N > 0:
+            self.count = N
+        else:
+            self.count = len(self.f5.get('images')[:])
+
 
         self.annotations = annotations
         self.transforms = transforms
@@ -212,6 +224,7 @@ class Dataset_objdetect(Dataset):
             area = self.f5.get('areas')[idx, :]
             iscrowd = self.f5.get('crowed')[idx, :]
             num = self.f5.get('num')[idx, 0]
+            name = self.f5.get('name')[idx, 0]
 
             target = {}
             target["boxes"] = torch.tensor(boxes[:num])
@@ -223,7 +236,7 @@ class Dataset_objdetect(Dataset):
             if self.transforms is not None:
                 images = self.transforms(images)
 
-            return images, target, idx
+            return images, target, idx, name
         else:
             images = self.f5.get('images')[idx, :]
             if self.transforms is not None:

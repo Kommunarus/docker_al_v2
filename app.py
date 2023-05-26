@@ -62,12 +62,13 @@ class ActiveLearning(Resource):
         # сеть для детекции, может быть одной из:
         # yolo, fasterrcnn
         type_model = reqparse.request.args['type_model']
+        num_epochs = int(reqparse.request.args['num_epochs'])
 
         return train_api(path_to_img_train, path_to_labels_train,
                     path_to_img_val, path_to_labels_val,
                     add, device, path_model, batch_unlabeled, pretrain,
                     save_model, use_val_test, retrain, selection_function,
-                    quantile_min, quantile_max, type_model)
+                    quantile_min, quantile_max, type_model, num_epochs)
 
 
 class Evaluate(Resource):
@@ -95,23 +96,37 @@ class Evaluate(Resource):
         retrain = True if retrain == 'T' else False
 
         type_model = reqparse.request.args['type_model']
+        num_epochs = int(reqparse.request.args['num_epochs'])
 
         return eval(path_to_img_train, path_to_labels_train,
                 path_to_img_val, path_to_labels_val,
                 path_to_img_test, path_to_labels_test, device, save_model,
-                pretrain, path_model, retrain, type_model)
+                pretrain, path_model, retrain, type_model, num_epochs)
 
-
-
-
-
-class CustomModel(Resource):
-    @staticmethod
-    def get():
-        pass
 
 api.add_resource(ActiveLearning, '/active_learning')
 api.add_resource(Evaluate, '/eval')
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', debug=True)
+    # path_to_img_train = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/train'
+    # path_to_labels_train = '/home/neptun/PycharmProjects/datasets/coco/labelstrain/first.json'
+    # path_to_img_val = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/val'
+    # path_to_labels_val = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/labels_val/val.json'
+    # path_to_img_test = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/test'
+    # path_to_labels_test = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/labels_test/test.json'
+    # gpu = 0
+    # pretrain_from_hub = True
+    # save_model = False
+    # path_model = ''
+    # retrain_user_model = False
+    # # type_model = 'fasterrcnn'
+    # type_model = 'custom'
+    # num_epochs = 25
+    #
+    # coco_evaluator = eval(path_to_img_train, path_to_labels_train,
+    #      path_to_img_val, path_to_labels_val,
+    #      path_to_labels_test, path_to_img_test,
+    #      gpu, save_model, pretrain=pretrain_from_hub, path_model=path_model, retrain=retrain_user_model,
+    #                       type_model=type_model,
+    #      num_epochs=num_epochs)

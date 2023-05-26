@@ -24,18 +24,6 @@ from scripts.detection.unit import write_to_log
 import shutil
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
-from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
-from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn, FasterRCNN_MobileNet_V3_Large_FPN_Weights
-from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_320_fpn, FasterRCNN_MobileNet_V3_Large_320_FPN_Weights
-
-from torchvision.models.detection import fcos_resnet50_fpn, FCOS_ResNet50_FPN_Weights
-
-from torchvision.models.detection import retinanet_resnet50_fpn, RetinaNet_ResNet50_FPN_Weights
-from torchvision.models.detection import retinanet_resnet50_fpn_v2, RetinaNet_ResNet50_FPN_V2_Weights
-
-from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights
-
-from torchvision.models.detection import ssdlite320_mobilenet_v3_large, SSDLite320_MobileNet_V3_Large_Weights
 
 import subprocess
 import sys
@@ -90,10 +78,13 @@ def train_model(pathtoimg, pathtolabelstrain,
             write_to_log('{}. best val mape {}'.format(epoch+1, best_mape))
         best_model = copy.deepcopy(model)
     if ds0.create_dataset:
-        os.remove('../../data/'+ds0.name+'.hdf5')
+        os.remove(os.getcwd()+'/data/'+ds0.name+'.hdf5')
+    if use_val_test:
+        dataset_test.f5.close()
     return best_model
 
-def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain_hub, premodel=None):
+def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain_hub, num_epochs,
+                 premodel=None):
     path_root, name_dir = json_to_yolo(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval)
     script = os.getcwd() + '/custom_model/train.py'
     data = os.getcwd() + f'/data/{name_dir}/my.yaml'
@@ -111,18 +102,20 @@ def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrai
         f.write(text_yaml)
     if premodel is not None:
         subprocess.check_call([sys.executable, script, "--data", data, "--weights", premodel, "--img", '640',
-                               '--batch-size', '32', '--epochs', '10',
+                               '--batch-size', '16', '--epochs', str(num_epochs),
                                '--project', path_to_weight])
     else:
+        weights_name = 'yolov5s'
         if pretrain_hub:
-            weights = 'yolov5s.pt'
-            subprocess.check_call([sys.executable, script, "--data", data, "--weights", weights, "--img", '640',
-                                   '--batch-size', '32', '--epochs', '10',
+            subprocess.check_call([sys.executable, script, "--data", data, "--weights", '{}.pt'.format(weights_name),
+                                   "--img", '640',
+                                   '--batch-size', '16', '--epochs', str(num_epochs),
                                    '--project', path_to_weight])
         else:
-            subprocess.check_call([sys.executable, script, "--data", data, "--weights", "", "--cfg", "yolov5s.yaml",
+            subprocess.check_call([sys.executable, script, "--data", data, "--weights", "", "--cfg",
+                                   "{}.yaml".format(weights_name),
                                    "--img", '640',
-                                   '--batch-size', '32', '--epochs', '10',
+                                   '--batch-size', '16', '--epochs', str(num_epochs),
                                    '--project', path_to_weight])
     shutil.rmtree(path_root + name_dir)
     return path_to_weight + '/exp/weights/best.pt'
@@ -246,11 +239,11 @@ def calc_faster(all_img, images, pathtoimg, pathtolabels,
                 add, device,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
-                quantile_min, quantile_max, path_do_dir_model):
+                quantile_min, quantile_max, path_do_dir_model, num_epochs):
     if path_model == '':
         write_to_log('start train model')
         model0 = train_model(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval,
-                             device, num_epochs=30, pretrain=pretrain, use_val_test=use_val_test)
+                             device, num_epochs=num_epochs, pretrain=pretrain, use_val_test=use_val_test)
     elif retrain:
         write_to_log('load and train model')
         if os.path.exists(path_model):
@@ -287,14 +280,15 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
                 add, device,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
-                quantile_min, quantile_max, path_do_dir_model):
+                quantile_min, quantile_max, path_do_dir_model, num_epochs):
     if path_model == '':
         write_to_log('start train model')
-        path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain)
+        path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs)
     elif retrain:
         write_to_log('load and train model')
         if os.path.exists(path_model):
-            path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, path_model)
+            path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs,
+                                      path_model)
         else:
             return {'info': 'weight not exist'}
     else:
@@ -322,7 +316,7 @@ def train_api(pathtoimg, pathtolabels,
               add=100, device_rest='0',
               path_model='', batch_unlabeled=-1, pretrain=True,
               save_model=False, use_val_test=True, retrain=False, selection_function='min',
-              quantile_min=0, quantile_max=1, type_model='custom'):
+              quantile_min=0, quantile_max=1, type_model='custom', num_epochs=10):
     device = f"cuda:{device_rest}" if torch.cuda.is_available() else "cpu"
     path_do_dir_model = '/weight'
     write_to_log(device)
@@ -335,14 +329,14 @@ def train_api(pathtoimg, pathtolabels,
                 add, device,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
-                quantile_min, quantile_max, path_do_dir_model)
+                quantile_min, quantile_max, path_do_dir_model, num_epochs)
     elif type_model == 'custom':
         return calc_custom(all_img, images, pathtoimg, pathtolabels,
                 pathtoimgval, pathtolabelsval,
                 add, device,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
-                quantile_min, quantile_max, path_do_dir_model)
+                quantile_min, quantile_max, path_do_dir_model, num_epochs)
     else:
         return {'info': 'type_model is incorrect'}
 
