@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    shm_size: '4gb'
     volumes:
       - /home/neptun/PycharmProjects/datasets/:/ds
       - /home/neptun/PycharmProjects/docker_al_v2/data/:/data

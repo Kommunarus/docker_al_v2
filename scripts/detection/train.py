@@ -86,9 +86,9 @@ def train_model(pathtoimg, pathtolabelstrain,
 def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain_hub, num_epochs,
                  premodel=None):
     path_root, name_dir = json_to_yolo(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval)
-    script = os.getcwd() + '/custom_model/train.py'
-    data = os.getcwd() + f'/data/{name_dir}/my.yaml'
-    path_to_weight = os.getcwd() + f'/weight/{str(uuid.uuid4())}'
+    script = os.getcwd() + 'custom_model/train.py'
+    data = os.getcwd() + f'data/{name_dir}/my.yaml'
+    path_to_weight = os.getcwd() + f'weight/{str(uuid.uuid4())}'
     os.makedirs(path_to_weight)
     text_yaml = '\n' + \
                 f'path: ../{path_root + name_dir}\n' + \

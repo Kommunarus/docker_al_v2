@@ -21,6 +21,8 @@ def mAP():
         'save_model': 'F',
         'path_model': '',
         'retrain_user_model': 'F',
+        'type_model': 'custom',
+        'num_epochs': '50',
 
     }
 
@@ -52,12 +54,12 @@ def mAP():
 if __name__ == '__main__':
     # p = [1_000, 10_000, 30_000]
     N_train = len(os.listdir('/home/neptun/PycharmProjects/datasets/coco/my_dataset/train'))
-    n_rnd = [N_train // 64]
-    # n_rnd = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2, N_train]
+    # n_rnd = [N_train // 64]
+    n_rnd = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2, N_train]
     start = datetime.datetime.now()
     print(start)
     told = start
-    k = 1
+    k = 5
     L = []
     for i in n_rnd:
         mean = 0

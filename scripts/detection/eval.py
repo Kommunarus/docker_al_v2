@@ -50,7 +50,7 @@ def eval_faster(path_to_img_train, path_to_labels_train,
 
     images_test, annotations_test = prepare_items_od(path_to_img_test, path_to_labels_test)
     dataset_test = Dataset_objdetect(path_to_img_test, images_test, annotations_test, get_transform(), name='test',
-                                     N=10)
+                                     N=-1)
     data_loader_test = DataLoader(dataset_test, batch_size=8, shuffle=False, collate_fn=utils.collate_fn)
     write_to_log('in test {} samples'.format(len(set(images_test))))
 
@@ -84,7 +84,7 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
             return {'info': 'weight not exist'}
     images_test, annotations_test = prepare_items_od(path_to_img_test, path_to_labels_test)
     dataset_test = Dataset_objdetect(path_to_labels_test, images_test, annotations_test, get_transform(), name='test',
-                                     N=10)
+                                     N=-1)
     data_loader_test = DataLoader(dataset_test, batch_size=8, shuffle=False, collate_fn=utils.collate_fn)
     write_to_log('in test {} samples'.format(len(set(images_test))))
 
@@ -98,7 +98,7 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
 
 def eval(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,
-         path_to_labels_test, path_to_img_test,
+         path_to_img_test, path_to_labels_test,
          device_rest, save_model, pretrain=True, path_model='', retrain=False, type_model='yolo', num_epochs=10):
 
     device = f"cuda:{device_rest}" if torch.cuda.is_available() else "cpu"

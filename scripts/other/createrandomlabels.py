@@ -41,7 +41,7 @@ def make_file(N, path_to_json_train, path_to_out):
         good_images_ids.append(row['image_id'])
     good_images_ids = list(set(good_images_ids))
 
-    print('zero file {} / {}'.format(len(good_images_ids), N))
+    # print('zero file {} / {}'.format(len(good_images_ids), N))
 
 
     new_image = []
