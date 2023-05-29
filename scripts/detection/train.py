@@ -86,39 +86,46 @@ def train_model(pathtoimg, pathtolabelstrain,
 def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain_hub, num_epochs,
                  premodel=None):
     path_root, name_dir = json_to_yolo(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval)
-    script = os.getcwd() + 'custom_model/train.py'
-    data = os.getcwd() + f'data/{name_dir}/my.yaml'
-    path_to_weight = os.getcwd() + f'weight/{str(uuid.uuid4())}'
+    getcwd = '/home/alex/PycharmProjects/docker_al_v2'
+    script = os.path.join(getcwd, 'custom_model/train.py')
+    path_to_data_dir = os.path.join(getcwd, f'data/{name_dir}')
+    path_to_data = os.path.join(path_to_data_dir, 'my.yaml')
+    path_to_weight = os.path.join(getcwd, f'weight/{str(uuid.uuid4())}')
+
+    # script = os.path.join(os.getcwd(), 'custom_model/train.py')
+    # data = os.path.join(os.getcwd(), f'data/{name_dir}/my.yaml')
+    # path_to_weight = os.path.join(os.getcwd(), f'weight/{str(uuid.uuid4())}')
+    # os.makedirs(path_to_data_dir)
     os.makedirs(path_to_weight)
     text_yaml = '\n' + \
-                f'path: ../{path_root + name_dir}\n' + \
+                f'path: {path_root + "/" + name_dir}\n' + \
                 'train: train/images\n' + \
                 'val: val/images\n' + \
                 'test:\n' + \
                 '# Classes\n' + \
                 'names:\n' + \
                 '   0: obj\n'
-    with open(data, 'w') as f:
+    with open(path_to_data, 'w') as f:
         f.write(text_yaml)
     if premodel is not None:
-        subprocess.check_call([sys.executable, script, "--data", data, "--weights", premodel, "--img", '640',
+        subprocess.check_call([sys.executable, script, "--data", path_to_data, "--weights", premodel, "--img", '640',
                                '--batch-size', '16', '--epochs', str(num_epochs),
                                '--project', path_to_weight])
     else:
         weights_name = 'yolov5s'
         if pretrain_hub:
-            subprocess.check_call([sys.executable, script, "--data", data, "--weights", '{}.pt'.format(weights_name),
+            subprocess.check_call([sys.executable, script, "--data", path_to_data, "--weights", '{}.pt'.format(weights_name),
                                    "--img", '640',
                                    '--batch-size', '16', '--epochs', str(num_epochs),
                                    '--project', path_to_weight])
         else:
-            subprocess.check_call([sys.executable, script, "--data", data, "--weights", "", "--cfg",
+            subprocess.check_call([sys.executable, script, "--data", path_to_data, "--weights", "", "--cfg",
                                    "{}.yaml".format(weights_name),
                                    "--img", '640',
                                    '--batch-size', '16', '--epochs', str(num_epochs),
                                    '--project', path_to_weight])
-    shutil.rmtree(path_root + name_dir)
-    return path_to_weight + '/exp/weights/best.pt'
+    shutil.rmtree(path_root + '/'+ name_dir)
+    return path_to_weight + '/exp/weights/best.pt', path_to_weight
 
 def get_model(num_classes, pretrain):
     if pretrain:
@@ -174,14 +181,15 @@ def find_out_net(model, device, pathtoimg, unlabeled_data, func):
 
 def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
     # python  detect.py --weights  yolov5s.pt --source   path/
-    script = os.getcwd() + '/custom_model/detect.py'
+    getcwd = '/home/alex/PycharmProjects/docker_al_v2'
+    script = getcwd + '/custom_model/detect.py'
 
-    data_file = os.getcwd() + f'/data/{str(uuid.uuid4())}.txt'
+    data_file = getcwd + f'/data/{str(uuid.uuid4())}.txt'
     with open(data_file, 'w') as list_file:
         for f in unlabeled_data:
             list_file.write('{}/{}\n'.format(pathtoimg, f))
 
-    path_to_out = os.getcwd() + f'/data/{str(uuid.uuid4())}'
+    path_to_out = getcwd + f'/data/{str(uuid.uuid4())}'
     os.makedirs(path_to_out)
 
     subprocess.check_call([sys.executable, script, "--source", data_file, "--weights", path_model, "--img", '640',
@@ -201,6 +209,8 @@ def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
             indexs += [indx, ]
             values += [p1, ]
 
+    shutil.rmtree(path_to_out)
+    os.remove(data_file)
     return indexs, values
 
 def mean(x):
@@ -281,14 +291,17 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
                 quantile_min, quantile_max, path_do_dir_model, num_epochs):
+    dir_train_custom_model = ''
     if path_model == '':
         write_to_log('start train model')
-        path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs)
+        path_model, dir_train_custom_model = train_custom(pathtoimg, pathtolabels, pathtoimgval,
+                                                          pathtolabelsval, pretrain, num_epochs)
     elif retrain:
         write_to_log('load and train model')
         if os.path.exists(path_model):
-            path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs,
-                                      path_model)
+            path_model, dir_train_custom_model = train_custom(pathtoimg, pathtolabels, pathtoimgval,
+                                                              pathtolabelsval, pretrain, num_epochs,
+                                                              path_model)
         else:
             return {'info': 'weight not exist'}
     else:
@@ -308,34 +321,37 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
                                               quantile_min, quantile_max, 'custom')
     if save_model:
         return {'data': add_to_label_items, 'model': path_model}
+
     else:
+        if len(dir_train_custom_model) > 0:
+            shutil.rmtree(dir_train_custom_model)
         return {'data': add_to_label_items}
 
-def train_api(pathtoimg, pathtolabels,
-              pathtoimgval, pathtolabelsval,
-              add=100, device_rest='0',
-              path_model='', batch_unlabeled=-1, pretrain=True,
-              save_model=False, use_val_test=True, retrain=False, selection_function='min',
+def train_api(path_to_img_train, path_to_labels_train,
+              path_to_img_val, path_to_labels_val,
+              add=100, gpu='0',
+              path_model='', batch_unlabeled=-1, pretrain_from_hub=True,
+              save_model=False, use_val_test_in_train=True, retrain_user_model=False, bbox_selection_policy='min',
               quantile_min=0, quantile_max=1, type_model='custom', num_epochs=10):
-    device = f"cuda:{device_rest}" if torch.cuda.is_available() else "cpu"
+    device = f"cuda:{gpu}" if torch.cuda.is_available() else "cpu"
     path_do_dir_model = '/weight'
     write_to_log(device)
 
-    all_img = os.listdir(pathtoimg)
-    images, _ = prepare_items_od(pathtoimg, pathtolabels)
+    all_img = os.listdir(path_to_img_train)
+    images, _ = prepare_items_od(path_to_img_train, path_to_labels_train)
     if type_model == 'fasterrcnn':
-        return calc_faster(all_img, images, pathtoimg, pathtolabels,
-                pathtoimgval, pathtolabelsval,
+        return calc_faster(all_img, images, path_to_img_train, path_to_labels_train,
+                path_to_img_val, path_to_labels_val,
                 add, device,
-                path_model, batch_unlabeled, pretrain,
-                save_model, use_val_test, retrain, selection_function,
+                path_model, batch_unlabeled, pretrain_from_hub,
+                save_model, use_val_test_in_train, retrain_user_model, bbox_selection_policy,
                 quantile_min, quantile_max, path_do_dir_model, num_epochs)
     elif type_model == 'custom':
-        return calc_custom(all_img, images, pathtoimg, pathtolabels,
-                pathtoimgval, pathtolabelsval,
+        return calc_custom(all_img, images, path_to_img_train, path_to_labels_train,
+                path_to_img_val, path_to_labels_val,
                 add, device,
-                path_model, batch_unlabeled, pretrain,
-                save_model, use_val_test, retrain, selection_function,
+                path_model, batch_unlabeled, pretrain_from_hub,
+                save_model, use_val_test_in_train, retrain_user_model, bbox_selection_policy,
                 quantile_min, quantile_max, path_do_dir_model, num_epochs)
     else:
         return {'info': 'type_model is incorrect'}

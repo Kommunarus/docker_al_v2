@@ -12,72 +12,58 @@ def al(add, path_model=''):
     url = 'http://127.0.0.1:5000/active_learning'
     params = {
         'gpu': '0',
-        'path_to_img_train': '/ds/coco/my_dataset/train',
-        'path_to_labels_train': '/ds/coco/for_al',
-        'path_to_img_val': '/ds/coco/my_dataset/val',
-        'path_to_labels_val': '/ds/coco/my_dataset/labels_val/val.json',
-        'pretrain_from_hub': 'F',
-        'save_model': 'F',
+        'path_to_img_train': '/media/alex/DAtA4/Datasets/coco/my_dataset/train',
+        'path_to_labels_train': '/media/alex/DAtA4/Datasets/coco/for_al',
+        'path_to_img_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/val',
+        'path_to_labels_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_val/val.json',
+        'pretrain_from_hub': True,
+        'save_model': False,
         'path_model': path_model,
-        'retrain_user_model': 'F',
+        'retrain_user_model': False,
         'add': add,
         'batch_unlabeled': -1,
-        'use_val_test_in_train': 'T',
+        'use_val_test_in_train': True,
         'bbox_selection_policy': 'min',
         'quantile_min': 0,
         'quantile_max': 0.3,
         'type_model': 'custom',
-        'num_epochs': 150
+        'num_epochs': 5
     }
 
-    querystring = parse.urlencode(params)
-
-    u = request.urlopen(url + '?' + querystring)
-    resp = u.read()
-    out = json.loads(resp.decode('utf-8'))['data']
+    # querystring = parse.urlencode(params)
+    #
+    # u = request.urlopen(url + '?' + querystring)
+    # resp = u.read()
+    # out = json.loads(resp.decode('utf-8'))['data']
+    out = train_api(**params)
     return out
-    # pathtoimg = '/home/neptun/PycharmProjects/datasets/coco/train2017/'
-    # pathtolabels = '/home/neptun/PycharmProjects/datasets/coco/labelstrain/'
-    # path_to_boxes = '/home/neptun/PycharmProjects/datasets/coco/boxes/'
-    # path_to_classes = '/home/neptun/PycharmProjects/datasets/coco/classification/'
-    # add = 1000
-    # save_model = model is None
-
-    # return train_api(path_to_img_train, path_to_labels_train,
-    #                  path_to_img_val, path_to_labels_val,
-    #                  add, device_rest, path_model, batch_unlabeled=-1, pretrain=pretrain, save_model=False)
 
 def mAP():
     url = 'http://127.0.0.1:5000/eval'
     params = {
         'gpu': '0',
-        'path_to_img_train': '/ds/coco/my_dataset/train',
-        'path_to_labels_train': '/ds/coco/for_al',
-        'path_to_img_val': '/ds/coco/my_dataset/val',
-        'path_to_labels_val': '/ds/coco/my_dataset/labels_val/val.json',
-        'path_to_img_test': '/ds/coco/my_dataset/test',
-        'path_to_labels_test': '/ds/coco/my_dataset/labels_test/test.json',
-        'pretrain_from_hub': 'F',
-        'save_model': 'T',
+        'path_to_img_train': '/media/alex/DAtA4/Datasets/coco/my_dataset/train',
+        'path_to_labels_train': '/media/alex/DAtA4/Datasets/coco/for_al',
+        'path_to_img_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/val',
+        'path_to_labels_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_val/val.json',
+        'path_to_img_test': '/media/alex/DAtA4/Datasets/coco/my_dataset/test',
+        'path_to_labels_test': '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_test/test.json',
+        'pretrain_from_hub': True,
+        'save_model': True,
         'path_model': '',
-        'retrain_user_model': 'F',
+        'retrain_user_model': False,
         'type_model': 'custom',
-        'num_epochs': 150
+        'num_epochs': 5
 
     }
 
-    querystring = parse.urlencode(params)
-
-    u = request.urlopen(url + '?' + querystring)
-    resp = u.read()
-    out = json.loads(resp.decode('utf-8'))
-    return (out['mAP(0.5:0.95)'], out['model'])
-    # save_model = True
+    # querystring = parse.urlencode(params)
     #
-    # return eval(path_to_img_train, path_to_labels_train,
-    #             path_to_img_val, path_to_labels_val,
-    #             path_to_img_test, path_to_labels_test,
-    #             device_rest, save_model, path_do_dir_model, pretrain)
+    # u = request.urlopen(url + '?' + querystring)
+    # resp = u.read()
+    # out = json.loads(resp.decode('utf-8'))
+    out = eval(**params)
+    return (out['mAP(0.5:0.95)'], out['model'])
 
 if __name__ == '__main__':
     L = []

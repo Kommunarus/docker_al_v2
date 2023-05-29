@@ -126,15 +126,16 @@ def evaluate_custom(path_model, path_to_img_test, path_to_labels_test,
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image r_u_n on the GPU
     images_test, _ = prepare_items_od_with_wh(path_to_img_test, path_to_labels_test)
-    script = os.getcwd() + '/custom_model/detect.py'
+    getcwd = '/home/alex/PycharmProjects/docker_al_v2'
+    script = getcwd + '/custom_model/detect.py'
 
-    data_file = os.getcwd() + f'/data/{"test_" + str(uuid.uuid4())}.txt'
+    data_file = getcwd + f'/data/{"test_" + str(uuid.uuid4())}.txt'
     with open(data_file, 'w') as list_file:
         for _, _, _, name_files in data_loader:
             for f in name_files:
                 list_file.write('{}/{}\n'.format(path_to_img_test, f.decode("utf-8")))
 
-    path_to_out = os.getcwd() + f'/data/{str(uuid.uuid4())}'
+    path_to_out = getcwd + f'/data/{str(uuid.uuid4())}'
     os.makedirs(path_to_out)
 
     subprocess.check_call([sys.executable, script, "--source", data_file, "--weights", path_model, "--img", '640',

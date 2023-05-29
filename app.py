@@ -109,24 +109,24 @@ api.add_resource(Evaluate, '/eval')
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', debug=True)
-    # path_to_img_train = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/train'
-    # path_to_labels_train = '/home/neptun/PycharmProjects/datasets/coco/labelstrain/first.json'
-    # path_to_img_val = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/val'
-    # path_to_labels_val = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/labels_val/val.json'
-    # path_to_img_test = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/test'
-    # path_to_labels_test = '/home/neptun/PycharmProjects/datasets/coco/my_dataset/labels_test/test.json'
+    # path_to_img_train = '/media/alex/DAtA4/Datasets/coco/my_dataset/train'
+    # path_to_labels_train = '/media/alex/DAtA4/Datasets/coco/labelstrain/first.json'
+    # path_to_img_val = '/media/alex/DAtA4/Datasets/coco/my_dataset/val'
+    # path_to_labels_val = '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_val/val.json'
+    # path_to_img_test = '/media/alex/DAtA4/Datasets/coco/my_dataset/test'
+    # path_to_labels_test = '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_test/test.json'
     # gpu = 0
-    # pretrain_from_hub = True
+    # pretrain_from_hub = False
     # save_model = False
     # path_model = ''
     # retrain_user_model = False
     # # type_model = 'fasterrcnn'
     # type_model = 'custom'
-    # num_epochs = 25
+    # num_epochs = 300
     #
     # coco_evaluator = eval(path_to_img_train, path_to_labels_train,
     #      path_to_img_val, path_to_labels_val,
-    #      path_to_labels_test, path_to_img_test,
+    #      path_to_img_test, path_to_labels_test,
     #      gpu, save_model, pretrain=pretrain_from_hub, path_model=path_model, retrain=retrain_user_model,
     #                       type_model=type_model,
     #      num_epochs=num_epochs)

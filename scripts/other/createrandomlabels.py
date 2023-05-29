@@ -31,18 +31,10 @@ def make_file(N, path_to_json_train, path_to_out):
     for row in annotations:
         if row['category_id'] == current_label and \
                 row['image_id'] in all_photo and \
-                row['area'] > 100:
+                row['area'] > 10:
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_annotation.append(copy_row)
-
-    good_images_ids = []
-    for row in new_annotation:
-        good_images_ids.append(row['image_id'])
-    good_images_ids = list(set(good_images_ids))
-
-    # print('zero file {} / {}'.format(len(good_images_ids), N))
-
 
     new_image = []
 

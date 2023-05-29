@@ -68,11 +68,11 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
                 pretrain, path_model, retrain, device, save_model, num_epochs):
     if path_model == '':
         write_to_log('start train model')
-        path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs)
+        path_model, dir_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs)
     elif retrain:
         write_to_log('load and train model')
         if os.path.exists(path_model):
-            path_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs,
+            path_model, dir_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs,
                                       path_model)
         else:
             return {'info': 'weight not exist'}
@@ -83,7 +83,7 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
         else:
             return {'info': 'weight not exist'}
     images_test, annotations_test = prepare_items_od(path_to_img_test, path_to_labels_test)
-    dataset_test = Dataset_objdetect(path_to_labels_test, images_test, annotations_test, get_transform(), name='test',
+    dataset_test = Dataset_objdetect(path_to_img_test, images_test, annotations_test, get_transform(), name='test',
                                      N=-1)
     data_loader_test = DataLoader(dataset_test, batch_size=8, shuffle=False, collate_fn=utils.collate_fn)
     write_to_log('in test {} samples'.format(len(set(images_test))))
@@ -99,22 +99,22 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
 def eval(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,
          path_to_img_test, path_to_labels_test,
-         device_rest, save_model, pretrain=True, path_model='', retrain=False, type_model='yolo', num_epochs=10):
+         gpu, save_model, pretrain_from_hub=True, path_model='', retrain_user_model=False, type_model='yolo', num_epochs=10):
 
-    device = f"cuda:{device_rest}" if torch.cuda.is_available() else "cpu"
+    device = f"cuda:{gpu}" if torch.cuda.is_available() else "cpu"
     path_do_dir_model = '/weight'
     write_to_log('eval')
     write_to_log(device)
     if type_model == 'fasterrcnn':
         return eval_faster(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,
-         path_to_img_test, path_to_labels_test, device_rest,
-         save_model, pretrain, path_model, retrain, path_do_dir_model, num_epochs)
+         path_to_img_test, path_to_labels_test, gpu,
+         save_model, pretrain_from_hub, path_model, retrain_user_model, path_do_dir_model, num_epochs)
     else:
         return eval_custom(path_to_img_train, path_to_labels_train,
                            path_to_img_val, path_to_labels_val,
                            path_to_img_test, path_to_labels_test,
-                           pretrain, path_model, retrain, device, save_model, num_epochs)
+                           pretrain_from_hub, path_model, retrain_user_model, device, save_model, num_epochs)
 
 
 def _summarize(coco, ap=1, iouThr=None, areaRng='all', maxDets=100):

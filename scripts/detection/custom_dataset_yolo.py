@@ -5,8 +5,8 @@ import shutil
 import copy
 
 def json_to_yolo(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval):
-    # path_root = '/home/neptun/PycharmProjects/docker_al_v2/data'
-    path_root = 'data/'
+    path_root = '/home/alex/PycharmProjects/docker_al_v2/data'
+    # path_root = 'data/'
     images_train, annotations_train = prepare_items_od_with_wh(pathtoimg, pathtolabels)
     images_val, annotations_val = prepare_items_od_with_wh(pathtoimgval, pathtolabelsval)
     name_dir = str(uuid.uuid4())

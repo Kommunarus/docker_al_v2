@@ -3,5 +3,8 @@
 *.jpg
 *.ckpt
 *.png
-.idea
 custom_model/*
+venv/*
+.idea/*
+data/*
+weight/*
