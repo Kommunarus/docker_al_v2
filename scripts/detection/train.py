@@ -77,8 +77,9 @@ def train_model(pathtoimg, pathtolabelstrain,
             best_mape = mape
             write_to_log('{}. best val mape {}'.format(epoch+1, best_mape))
         best_model = copy.deepcopy(model)
+    getcwd = '/home/alex/PycharmProjects/docker_al_v2'
     if ds0.create_dataset:
-        os.remove(os.getcwd()+'/data/'+ds0.name+'.hdf5')
+        os.remove(getcwd+'/data/'+ds0.name+'.hdf5')
     if use_val_test:
         dataset_test.f5.close()
     return best_model

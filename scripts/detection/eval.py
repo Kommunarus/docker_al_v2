@@ -102,13 +102,14 @@ def eval(path_to_img_train, path_to_labels_train,
          gpu, save_model, pretrain_from_hub=True, path_model='', retrain_user_model=False, type_model='yolo', num_epochs=10):
 
     device = f"cuda:{gpu}" if torch.cuda.is_available() else "cpu"
-    path_do_dir_model = '/weight'
+    getcwd = '/home/alex/PycharmProjects/docker_al_v2'
+    path_do_dir_model = getcwd + '/weight'
     write_to_log('eval')
     write_to_log(device)
     if type_model == 'fasterrcnn':
         return eval_faster(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,
-         path_to_img_test, path_to_labels_test, gpu,
+         path_to_img_test, path_to_labels_test, device,
          save_model, pretrain_from_hub, path_model, retrain_user_model, path_do_dir_model, num_epochs)
     else:
         return eval_custom(path_to_img_train, path_to_labels_train,

@@ -19,7 +19,7 @@ def al(params):
     # resp = u.read()
     # out = json.loads(resp.decode('utf-8'))['data']
     out = train_api(**params)
-    return out
+    return out['data']
 
 def mAP(params):
     url = 'http://127.0.0.1:5000/eval'
@@ -35,6 +35,10 @@ def mAP(params):
 
 if __name__ == '__main__':
     with Live(dir='experiment_al_detect' ,save_dvc_exp=True) as live:
+        type_model = 'fasterrcnn'
+        num_epochs = 5
+        retrain_user_model = False
+        pretrain_from_hub = True
         params_map = {
             'gpu': '0',
             'path_to_img_train': '/media/alex/DAtA4/Datasets/coco/my_dataset/train',
@@ -43,12 +47,12 @@ if __name__ == '__main__':
             'path_to_labels_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_val/val.json',
             'path_to_img_test': '/media/alex/DAtA4/Datasets/coco/my_dataset/test',
             'path_to_labels_test': '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_test/test.json',
-            'pretrain_from_hub': True,
+            'pretrain_from_hub': pretrain_from_hub,
             'save_model': True,
             'path_model': '',
-            'retrain_user_model': False,
-            'type_model': 'custom',
-            'num_epochs': 5
+            'retrain_user_model': retrain_user_model,
+            'type_model': type_model,
+            'num_epochs': num_epochs
 
         }
         live.log_param("type_model (val)", params_map['type_model'])
@@ -62,16 +66,16 @@ if __name__ == '__main__':
             'path_to_labels_train': '/media/alex/DAtA4/Datasets/coco/for_al',
             'path_to_img_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/val',
             'path_to_labels_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_val/val.json',
-            'pretrain_from_hub': True,
+            'pretrain_from_hub': pretrain_from_hub,
             'save_model': False,
-            'retrain_user_model': False,
+            'retrain_user_model': retrain_user_model,
             'batch_unlabeled': -1,
             'use_val_test_in_train': True,
             'bbox_selection_policy': 'min',
             'quantile_min': 0,
             'quantile_max': 0.3,
-            'type_model': 'custom',
-            'num_epochs': 5
+            'type_model': type_model,
+            'num_epochs': num_epochs
         }
 
         live.log_param("type_model (al)", params_al['type_model'])
