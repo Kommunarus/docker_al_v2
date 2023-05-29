@@ -73,8 +73,10 @@ def prepare_items_od(path_to_img, path_to_labels):
 
 
 class Dataset_objdetect(Dataset):
-    def __init__(self, path_to_img, images, annotations, transforms, path_to_h5=os.getcwd()+'/data', name='',
+    def __init__(self, path_to_img, images, annotations, transforms, path_to_h5='/data', name='',
                  N=-1):
+        curdir = '/home/alex/PycharmProjects/docker_al_v2'
+        path_to_h5 = curdir + path_to_h5
         self.path_to_img = path_to_img
         count = 0
         size = 640
