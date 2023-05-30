@@ -243,7 +243,7 @@ def sampling_uncertainty(model, pathtoimg, unlabeled_data, add, device, selectio
 
     # temp = a[-add:]
     out_name = [unlabeled_data[k] for k, v in temp]
-    return sorted(out_name)
+    return sorted(out_name), values
 
 def calc_faster(all_img, images, pathtoimg, pathtolabels,
                 pathtoimgval, pathtolabelsval,
@@ -277,14 +277,14 @@ def calc_faster(all_img, images, pathtoimg, pathtolabels,
 
     # methode = 'uncertainty'
     write_to_log('start uncertainty {}'.format(add))
-    add_to_label_items = sampling_uncertainty(model0, pathtoimg, unlabeled_data, add, device, selection_function,
+    add_to_label_items, all_value = sampling_uncertainty(model0, pathtoimg, unlabeled_data, add, device, selection_function,
                                               quantile_min, quantile_max, 'faster')
     if save_model:
         path_model = os.path.join(path_do_dir_model, '{}.pth'.format(uuid.uuid4()))
         torch.save(model0, path_model)
-        return {'data': add_to_label_items, 'model': path_model}
+        return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value}
     else:
-        return {'data': add_to_label_items}
+        return {'data': add_to_label_items, 'all_value': all_value}
 
 def calc_custom(all_img, images, pathtoimg, pathtolabels,
                 pathtoimgval, pathtolabelsval,
@@ -318,15 +318,15 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
     # methode = 'uncertainty'
     add_to_label_items = []
     write_to_log('start uncertainty {}'.format(add))
-    add_to_label_items = sampling_uncertainty(path_model, pathtoimg, unlabeled_data, add, device, selection_function,
+    add_to_label_items, all_value = sampling_uncertainty(path_model, pathtoimg, unlabeled_data, add, device, selection_function,
                                               quantile_min, quantile_max, 'custom')
     if save_model:
-        return {'data': add_to_label_items, 'model': path_model}
+        return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value}
 
     else:
         if len(dir_train_custom_model) > 0:
             shutil.rmtree(dir_train_custom_model)
-        return {'data': add_to_label_items}
+        return {'data': add_to_label_items, 'all_value': all_value}
 
 def train_api(path_to_img_train, path_to_labels_train,
               path_to_img_val, path_to_labels_val,

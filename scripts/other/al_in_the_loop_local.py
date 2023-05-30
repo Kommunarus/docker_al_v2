@@ -9,6 +9,7 @@ import torch
 import datetime
 
 from dvclive import Live
+import numpy as np
 
 
 def al(params):
@@ -19,7 +20,7 @@ def al(params):
     # resp = u.read()
     # out = json.loads(resp.decode('utf-8'))['data']
     out = train_api(**params)
-    return out['data']
+    return out['data'], out['all_value']
 
 def mAP(params):
     url = 'http://127.0.0.1:5000/eval'
@@ -34,11 +35,13 @@ def mAP(params):
     return (out['mAP(0.5:0.95)'], out['model'])
 
 if __name__ == '__main__':
-    with Live(dir='experiment_al_detect' ,save_dvc_exp=True) as live:
+    name_exp = 'exp'
+    with Live(dir=name_exp ,save_dvc_exp=True) as live:
+        # type_model = 'custom'
         type_model = 'fasterrcnn'
-        num_epochs = 5
+        num_epochs = 20
         retrain_user_model = False
-        pretrain_from_hub = True
+        pretrain_from_hub = False
         params_map = {
             'gpu': '0',
             'path_to_img_train': '/media/alex/DAtA4/Datasets/coco/my_dataset/train',
@@ -111,17 +114,23 @@ if __name__ == '__main__':
                 f, path_model = out[0], out[1]
                 a.append(f)
                 print('mAP', n_al[kk], f)
-                live.log_metric('mAP', f)
+                live.log_metric(f'mAP_step_{kk}', f)
                 if kk != len(n_al) - 1:
                     params_al['path_model'] = path_model
                     params_al['add'] = n_al[kk]
-                    step = al(params_al)
-                    write_json(step,
+                    delta, all_value = al(params_al)
+                    write_json(delta,
                                kk,
                                path_to_out=path_to_labels_train,
                                full_train_json=path_to_json_train)
+                    hist, bins = np.histogram(np.array(all_value))
+                    datapoints = []
+                    for v, x in zip(hist, bins[1:]) :
+                        datapoints.append({'p': x, 'n': v})
+                    live.log_plot('p inference', datapoints, x='p', y='n')
                 t = datetime.datetime.now()
                 print(t, t - told)
+                live.log_metric(f'time_work_step_{kk}', (t - told).seconds/60)
                 told = t
 
                 live.next_step()
