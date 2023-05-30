@@ -199,7 +199,7 @@ def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
     indexs = []
     values = []
     for indx, file_img in enumerate(unlabeled_data):
-        indexs.append(indx)
+        # indexs.append(indx)
 
         name = file_img.split('.')[0]
         name_txt = os.path.join(path_to_out, 'exp', 'labels', name + '.txt')
@@ -209,6 +209,10 @@ def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
             p1 = func(prob)
             indexs += [indx, ]
             values += [p1, ]
+        else:
+            indexs += [indx, ]
+            values += [0, ]
+
 
     shutil.rmtree(path_to_out)
     os.remove(data_file)
