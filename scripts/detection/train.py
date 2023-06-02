@@ -84,7 +84,7 @@ def train_model(pathtoimg, pathtolabelstrain,
         dataset_test.f5.close()
     return best_model
 
-def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain_hub, num_epochs,
+def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain_hub, num_epochs, gpu,
                  premodel=None):
     path_root, name_dir = json_to_yolo(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval)
     getcwd = '/home/alex/PycharmProjects/docker_al_v2'
@@ -111,22 +111,22 @@ def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrai
     if premodel is not None:
         subprocess.check_call([sys.executable, script, "--data", path_to_data, "--weights", premodel, "--img", '640',
                                '--batch-size', '16', '--epochs', str(num_epochs),
-                               '--project', path_to_weight])
+                               '--project', path_to_weight, '--patience', '0', '--device', str(gpu)])
     else:
         weights_name = 'yolov5s'
         if pretrain_hub:
             subprocess.check_call([sys.executable, script, "--data", path_to_data, "--weights", '{}.pt'.format(weights_name),
                                    "--img", '640',
                                    '--batch-size', '16', '--epochs', str(num_epochs),
-                                   '--project', path_to_weight])
+                                   '--project', path_to_weight, '--patience', '0', '--device', str(gpu)])
         else:
             subprocess.check_call([sys.executable, script, "--data", path_to_data, "--weights", "", "--cfg",
                                    "{}.yaml".format(weights_name),
                                    "--img", '640',
                                    '--batch-size', '16', '--epochs', str(num_epochs),
-                                   '--project', path_to_weight])
+                                   '--project', path_to_weight, '--patience', '0', '--device', str(gpu)])
     shutil.rmtree(path_root + '/'+ name_dir)
-    return path_to_weight + '/exp/weights/best.pt', path_to_weight
+    return path_to_weight + '/exp/weights/last.pt', path_to_weight
 
 def get_model(num_classes, pretrain):
     if pretrain:
@@ -180,8 +180,7 @@ def find_out_net(model, device, pathtoimg, unlabeled_data, func):
 
     return indexs, values, bboxes
 
-def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
-    # python  detect.py --weights  yolov5s.pt --source   path/
+def find_out_net_custom(path_model, device, pathtoimg, unlabeled_data, func):
     getcwd = '/home/alex/PycharmProjects/docker_al_v2'
     script = getcwd + '/custom_model/detect.py'
 
@@ -194,7 +193,9 @@ def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
     os.makedirs(path_to_out)
 
     subprocess.check_call([sys.executable, script, "--source", data_file, "--weights", path_model, "--img", '640',
-                           '--project', path_to_out, '--save-txt', '--agnostic-nms', '--nosave', '--save-conf'])
+                           '--project', path_to_out, '--save-txt', '--agnostic-nms', '--save-conf',
+                           '--conf-thres', '0.15', '--device', str(device)])
+    # '--nosave',
 
     indexs = []
     values = []
@@ -214,9 +215,9 @@ def find_out_net_custom(path_model, pathtoimg, unlabeled_data, func):
             values += [0, ]
 
 
-    shutil.rmtree(path_to_out)
+    # shutil.rmtree(path_to_out)
     os.remove(data_file)
-    return indexs, values
+    return indexs, values, path_to_out
 
 def mean(x):
     return sum(x) / len(x)
@@ -236,7 +237,7 @@ def sampling_uncertainty(model, pathtoimg, unlabeled_data, add, device, selectio
     if type == 'faster':
         indexs, values, _ = find_out_net(model, device, pathtoimg, unlabeled_data, func=fun)
     else:
-        indexs, values = find_out_net_custom(model, pathtoimg, unlabeled_data, func=fun)
+        indexs, values, path_out = find_out_net_custom(model, device, pathtoimg, unlabeled_data, func=fun)
 
     out_dict = {k: v for k, v in zip(indexs, values)}
     a = sorted(out_dict.items(), key=lambda x: x[1])
@@ -247,7 +248,11 @@ def sampling_uncertainty(model, pathtoimg, unlabeled_data, add, device, selectio
 
     # temp = a[-add:]
     out_name = [unlabeled_data[k] for k, v in temp]
-    return sorted(out_name), values
+    if type == 'faster':
+        return sorted(out_name), values, None
+    else:
+        return sorted(out_name), values, path_out
+
 
 def calc_faster(all_img, images, pathtoimg, pathtolabels,
                 pathtoimgval, pathtolabelsval,
@@ -286,9 +291,9 @@ def calc_faster(all_img, images, pathtoimg, pathtolabels,
     if save_model:
         path_model = os.path.join(path_do_dir_model, '{}.pth'.format(uuid.uuid4()))
         torch.save(model0, path_model)
-        return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value}
+        return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value, 'path_to_img': None}
     else:
-        return {'data': add_to_label_items, 'all_value': all_value}
+        return {'data': add_to_label_items, 'all_value': all_value, 'path_to_img': None}
 
 def calc_custom(all_img, images, pathtoimg, pathtolabels,
                 pathtoimgval, pathtolabelsval,
@@ -322,15 +327,16 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
     # methode = 'uncertainty'
     add_to_label_items = []
     write_to_log('start uncertainty {}'.format(add))
-    add_to_label_items, all_value = sampling_uncertainty(path_model, pathtoimg, unlabeled_data, add, device, selection_function,
-                                              quantile_min, quantile_max, 'custom')
+    add_to_label_items, all_value, path = sampling_uncertainty(path_model, pathtoimg, unlabeled_data, add, device,
+                                                               selection_function,
+                                                               quantile_min, quantile_max, 'custom')
     if save_model:
-        return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value}
+        return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value, 'path_to_img': path}
 
     else:
         if len(dir_train_custom_model) > 0:
             shutil.rmtree(dir_train_custom_model)
-        return {'data': add_to_label_items, 'all_value': all_value}
+        return {'data': add_to_label_items, 'all_value': all_value, 'path_to_img': path}
 
 def train_api(path_to_img_train, path_to_labels_train,
               path_to_img_val, path_to_labels_val,

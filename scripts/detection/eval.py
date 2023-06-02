@@ -1,3 +1,5 @@
+import shutil
+
 from scripts.detection.engine import evaluate, evaluate_custom
 from scripts.detection.train import train_model
 from scripts.detection.unit import Dataset_objdetect, prepare_items_od, prepare_items_od_with_wh
@@ -11,6 +13,7 @@ import yaml
 import os
 import uuid
 from scripts.detection.unit import write_to_log
+from scripts.detection.custom_dataset_yolo import calc_map50
 import pathlib
 import subprocess
 import sys
@@ -59,21 +62,22 @@ def eval_faster(path_to_img_train, path_to_labels_train,
     if save_model:
         path_model = os.path.join(path_do_dir_model, '{}.pth'.format(uuid.uuid4()))
         torch.save(model0, path_model)
-        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox']),
+        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox']), 'mAP(0.5:0.95)_train': None,
                 'model': path_model}
     else:
-        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox'])}
+        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox']), 'mAP(0.5:0.95)_train': None}
 
 def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_img_test, path_to_labels_test,
-                pretrain, path_model, retrain, device, save_model, num_epochs):
+                pretrain, path_model, retrain, gpu, save_model, num_epochs):
     if path_model == '':
         write_to_log('start train model')
-        path_model, dir_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs)
+        path_model, dir_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain,
+                                             num_epochs, gpu)
     elif retrain:
         write_to_log('load and train model')
         if os.path.exists(path_model):
-            path_model, dir_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain, num_epochs,
-                                      path_model)
+            path_model, dir_model = train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrain,
+                                                 num_epochs, gpu, path_model)
         else:
             return {'info': 'weight not exist'}
     else:
@@ -82,19 +86,16 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
             pass
         else:
             return {'info': 'weight not exist'}
-    images_test, annotations_test = prepare_items_od(path_to_img_test, path_to_labels_test)
-    dataset_test = Dataset_objdetect(path_to_img_test, images_test, annotations_test, get_transform(), name='test',
-                                     N=-1)
-    data_loader_test = DataLoader(dataset_test, batch_size=8, shuffle=False, collate_fn=utils.collate_fn)
-    write_to_log('in test {} samples'.format(len(set(images_test))))
 
-    coco_evaluator = evaluate_custom(path_model, path_to_img_test, path_to_labels_test,
-                                     data_loader_test, device=device)
+    map_train = calc_map50(pathtoimg, pathtolabels, path_model, gpu)
+    map_test = calc_map50(path_to_img_test, path_to_labels_test, path_model, gpu)
+
     if save_model:
-        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox']),
+        return {'metrics_test': map_test, 'metrics_train': map_train,
                 'model': path_model}
     else:
-        return {'mAP(0.5:0.95)': _summarize(coco_evaluator.coco_eval['bbox'])}
+        shutil.rmtree(dir_model)
+        return {'metrics_test': map_test, 'metrics_train': map_train}
 
 def eval(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,
@@ -115,7 +116,7 @@ def eval(path_to_img_train, path_to_labels_train,
         return eval_custom(path_to_img_train, path_to_labels_train,
                            path_to_img_val, path_to_labels_val,
                            path_to_img_test, path_to_labels_test,
-                           pretrain_from_hub, path_model, retrain_user_model, device, save_model, num_epochs)
+                           pretrain_from_hub, path_model, retrain_user_model, gpu, save_model, num_epochs)
 
 
 def _summarize(coco, ap=1, iouThr=None, areaRng='all', maxDets=100):

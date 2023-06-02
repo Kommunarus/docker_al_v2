@@ -5,10 +5,10 @@ import copy
 # from coco_lib.objectdetection import ObjectDetectionDataset
 import shutil
 
-path_to_dataset = '/home/neptun/PycharmProjects/datasets/coco'
-# path_to_dataset = '/media/alex/DAtA2/Datasets/coco'
+# path_to_dataset = '/home/neptun/PycharmProjects/datasets/coco'
+path_to_dataset = '/media/alex/DAtA4/Datasets/coco'
 def make_file(N):
-    current_label = 1  #cat
+    current_label = 17  #cat
     # N = 1000
 
     with open(os.path.join(path_to_dataset, 'instances_val2017.json')) as f:

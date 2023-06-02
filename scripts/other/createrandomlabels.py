@@ -5,7 +5,7 @@ import copy
 
 
 def make_file(N, path_to_json_train, path_to_out):
-    current_label = 1  #cat
+    current_label = 17  #cat
     # N = 1000
     # path_to_dataset = '/media/alex/DAtA2/Datasets/coco'
     # path_to_dataset = '/home/neptun/PycharmProjects/datasets/coco'
@@ -30,8 +30,9 @@ def make_file(N, path_to_json_train, path_to_out):
     new_annotation = []
     for row in annotations:
         if row['category_id'] == current_label and \
-                row['image_id'] in all_photo and \
-                row['area'] > 10:
+                row['image_id'] in all_photo:
+                # row['area'] > 10\
+
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_annotation.append(copy_row)

@@ -253,5 +253,6 @@ def write_to_log(txt):
     with open(path, 'a') as file:
         file.write('{}\t{}\n'.format(datetime.datetime.now(), txt))
 
+
 if __name__ == '__main__':
     pass

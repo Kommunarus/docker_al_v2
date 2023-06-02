@@ -1,3 +1,4 @@
+import random
 from urllib import request, parse
 import json
 import os
@@ -5,12 +6,15 @@ from createrandomlabels import make_file
 from list_to_cocofile import write_json
 from scripts.detection.train import train_api
 from scripts.detection.eval import eval
+from scripts.detection.custom_dataset_yolo import save_images_detect
+
 import torch
 import datetime
 
 from dvclive import Live
 import numpy as np
 import matplotlib.pyplot as plt
+import shutil
 
 
 def al(params):
@@ -21,7 +25,7 @@ def al(params):
     # resp = u.read()
     # out = json.loads(resp.decode('utf-8'))['data']
     out = train_api(**params)
-    return out['data'], out['all_value']
+    return out['data'], out['all_value'], out['path_to_img']
 
 def mAP(params):
     url = 'http://127.0.0.1:5000/eval'
@@ -32,19 +36,23 @@ def mAP(params):
     # u = request.urlopen(url + '?' + querystring)
     # resp = u.read()
     # out = json.loads(resp.decode('utf-8'))
-    out = eval(**params)
-    return (out['mAP(0.5:0.95)'], out['model'])
+    return eval(**params)
 
 if __name__ == '__main__':
-    name_exp = 'exp'
-    with Live(dir=name_exp ,save_dvc_exp=True) as live:
+    name_exp = 'exp_yolo_s_al_k_020623'
+    with Live(dir=name_exp, save_dvc_exp=True) as live:
         type_model = 'custom'
         # type_model = 'fasterrcnn'
-        num_epochs = 10
+        num_epochs = 300
         retrain_user_model = False
         pretrain_from_hub = False
+        batch_unlabeled = -1
+        bbox_selection_policy = 'mean'
+        quantile_min = 0
+        quantile_max = 0.3
+        gpu = 1
         params_map = {
-            'gpu': '0',
+            'gpu': gpu,
             'path_to_img_train': '/media/alex/DAtA4/Datasets/coco/my_dataset/train',
             'path_to_labels_train': '/media/alex/DAtA4/Datasets/coco/for_al',
             'path_to_img_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/val',
@@ -65,7 +73,7 @@ if __name__ == '__main__':
         live.log_param("retrain_user_model (val)", params_map['retrain_user_model'])
 
         params_al = {
-            'gpu': '0',
+            'gpu': gpu,
             'path_to_img_train': '/media/alex/DAtA4/Datasets/coco/my_dataset/train',
             'path_to_labels_train': '/media/alex/DAtA4/Datasets/coco/for_al',
             'path_to_img_val': '/media/alex/DAtA4/Datasets/coco/my_dataset/val',
@@ -73,11 +81,11 @@ if __name__ == '__main__':
             'pretrain_from_hub': pretrain_from_hub,
             'save_model': False,
             'retrain_user_model': retrain_user_model,
-            'batch_unlabeled': 5_000,
+            'batch_unlabeled': batch_unlabeled,
             'use_val_test_in_train': True,
-            'bbox_selection_policy': 'min',
-            'quantile_min': 0,
-            'quantile_max': 0.3,
+            'bbox_selection_policy': bbox_selection_policy,
+            'quantile_min': quantile_min,
+            'quantile_max': quantile_max,
             'type_model': type_model,
             'num_epochs': num_epochs
         }
@@ -94,50 +102,70 @@ if __name__ == '__main__':
         path_to_json_train = '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_train/train.json'
 
         N_train = len(os.listdir(path_to_img_train))
-        # n_al = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2]
-        n_al = [N_train // 64, N_train // 32, N_train // 16]
+        n_al = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2]
+        # n_al = [N_train // 64, N_train // 32, N_train // 16]
         print(n_al)
         start = datetime.datetime.now()
         print(start)
         told = start
 
-        for i in range(1):
+        for i in range(5):
             files_in_labels = os.listdir(path_to_labels_train)
             for file in files_in_labels:
                 os.remove(os.path.join(path_to_labels_train, file))
             make_file(n_al[0],
                       path_to_json_train=path_to_json_train,
                       path_to_out=os.path.join(path_to_labels_train, 'first.json'))
-            a = []
             for kk in range(len(n_al)):
                 out = mAP(params_map)
-                f, path_model = out[0], out[1]
-                a.append(f)
-                print('mAP', n_al[kk], f)
-                live.log_metric(f'mAP_step_{kk}', f)
+                metrics_test, metrics_train, model = out['metrics_test'], out['metrics_train'], out['model']
+                if type_model == 'custom':
+                    live.log_metric('test/mAP50', metrics_test[2])
+                    live.log_metric('test/P', metrics_test[0])
+                    live.log_metric('test/R', metrics_test[1])
+                    live.log_metric('train/mAP50', metrics_train[2])
+                    live.log_metric('train/P', metrics_train[0])
+                    live.log_metric('train/R', metrics_train[1])
+
+                    # root_p = params_map['path_to_img_train']
+                    # files = os.listdir(root_p)
+                    # files = [os.path.join(root_p, x) for x in files]
+                    # list_train = random.sample(files, k=5)
+                    # save_images_detect(live, model, list_train, i, gpu)
+
                 if kk != len(n_al) - 1:
-                    params_al['path_model'] = path_model
+                    params_al['path_model'] = model
                     params_al['add'] = n_al[kk]
-                    delta, all_value = al(params_al)
+                    delta, all_value, path_to_img = al(params_al)
                     write_json(delta,
                                kk,
                                path_to_out=path_to_labels_train,
                                full_train_json=path_to_json_train)
-                    hist, bins = np.histogram(np.array(all_value), bins=15)
+                    # hist, bins = np.histogram(np.array(all_value), bins=50)
+
                     fig, ax = plt.subplots()
-                    ax.hist(hist, bins=bins)
+                    ax.hist(np.array(all_value), bins=50)
                     fig.canvas.draw()
                     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
                     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
 
                     live.log_image(f"distribution_{kk}.png", data)
+
+
+                    for n_im in range(5):
+                        if type_model == 'fasterrcnn':
+                            live.log_image(f"unlabeles_{kk}_{n_im}.png", os.path.join(path_to_img_train,
+                                                                                   random.choice(delta)))
+                        else:
+                            live.log_image(f"unlabeles_{kk}_{n_im}.png", os.path.join(path_to_img, 'exp',
+                                                                                   random.choice(delta)))
+                    if type_model == 'custom':
+                        shutil.rmtree(path_to_img)
+
                 t = datetime.datetime.now()
                 print(t, t - told)
-                live.log_metric(f'time_work_step_{kk}', (t - told).seconds/60)
+                live.log_metric('time', (t - told).seconds/60)
                 told = t
 
                 live.next_step()
 
-            print(a)
-            L.append(a)
-        print(L)
