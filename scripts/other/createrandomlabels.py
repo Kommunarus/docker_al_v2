@@ -5,7 +5,7 @@ import copy
 
 
 def make_file(N, path_to_json_train, path_to_out):
-    current_label = 17  #cat
+    current_label = 1  #cat
     # N = 1000
     # path_to_dataset = '/media/alex/DAtA2/Datasets/coco'
     # path_to_dataset = '/home/neptun/PycharmProjects/datasets/coco'

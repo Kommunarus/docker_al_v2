@@ -39,15 +39,16 @@ def mAP(params):
     return eval(**params)
 
 if __name__ == '__main__':
-    name_exp = 'exp_yolo_s_al_k_020623'
+    name_exp = f'exp/al/yolo_s_{datetime.datetime.now().strftime("%d%m%Y")}_person'
     with Live(dir=name_exp, save_dvc_exp=True) as live:
         type_model = 'custom'
         # type_model = 'fasterrcnn'
-        num_epochs = 300
+        num_epochs = 100
         retrain_user_model = False
         pretrain_from_hub = False
         batch_unlabeled = -1
         bbox_selection_policy = 'mean'
+        selection_min = True
         quantile_min = 0
         quantile_max = 0.3
         gpu = 1
@@ -86,12 +87,14 @@ if __name__ == '__main__':
             'bbox_selection_policy': bbox_selection_policy,
             'quantile_min': quantile_min,
             'quantile_max': quantile_max,
+            'selection_min': selection_min,
             'type_model': type_model,
             'num_epochs': num_epochs
         }
 
         live.log_param("quantile_min (al)", params_al['quantile_min'])
         live.log_param("quantile_max (al)", params_al['quantile_max'])
+        live.log_param("selection_min (al)", params_al['selection_min'])
         live.log_param("batch_unlabeled (al)", params_al['batch_unlabeled'])
         live.log_param("bbox_selection_policy (al)", params_al['bbox_selection_policy'])
 
@@ -102,30 +105,33 @@ if __name__ == '__main__':
         path_to_json_train = '/media/alex/DAtA4/Datasets/coco/my_dataset/labels_train/train.json'
 
         N_train = len(os.listdir(path_to_img_train))
-        n_al = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2]
+        # n_al = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2]
+        n_al = [5_000, ] + [1_000, ] * 10
+        live.log_param('n_al', n_al)
+
         # n_al = [N_train // 64, N_train // 32, N_train // 16]
         print(n_al)
         start = datetime.datetime.now()
         print(start)
         told = start
 
-        for i in range(5):
+        for i in range(3):
             files_in_labels = os.listdir(path_to_labels_train)
             for file in files_in_labels:
                 os.remove(os.path.join(path_to_labels_train, file))
             make_file(n_al[0],
                       path_to_json_train=path_to_json_train,
                       path_to_out=os.path.join(path_to_labels_train, 'first.json'))
-            for kk in range(len(n_al)):
+            for kk in range(1, len(n_al)):
                 out = mAP(params_map)
-                metrics_test, metrics_train, model = out['metrics_test'], out['metrics_train'], out['model']
+                metrics_test, model = out['metrics_test'], out['model']
                 if type_model == 'custom':
                     live.log_metric('test/mAP50', metrics_test[2])
                     live.log_metric('test/P', metrics_test[0])
                     live.log_metric('test/R', metrics_test[1])
-                    live.log_metric('train/mAP50', metrics_train[2])
-                    live.log_metric('train/P', metrics_train[0])
-                    live.log_metric('train/R', metrics_train[1])
+                    # live.log_metric('train/mAP50', metrics_train[2])
+                    # live.log_metric('train/P', metrics_train[0])
+                    # live.log_metric('train/R', metrics_train[1])
 
                     # root_p = params_map['path_to_img_train']
                     # files = os.listdir(root_p)
@@ -133,7 +139,7 @@ if __name__ == '__main__':
                     # list_train = random.sample(files, k=5)
                     # save_images_detect(live, model, list_train, i, gpu)
 
-                if kk != len(n_al) - 1:
+                if kk != len(n_al) - 2:
                     params_al['path_model'] = model
                     params_al['add'] = n_al[kk]
                     delta, all_value, path_to_img = al(params_al)

@@ -1,8 +1,0 @@
-type_model: custom
-num_epochs (val): 10
-pretrain_from_hub (val): false
-retrain_user_model (val): false
-quantile_min (al): 0
-quantile_max (al): 0.3
-batch_unlabeled (al): 5000
-bbox_selection_policy (al): min

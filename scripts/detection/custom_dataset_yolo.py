@@ -132,7 +132,8 @@ def calc_map50(path_to_img_test, path_to_labels_test, path_model, gpu):
     #                        "--img", '640', "--project", path_to_data_dir,
     # ])
     import custom_model.val as validate
-    results, _, _ = validate.run(data=path_to_yaml, weights=path_model, project=path_to_data_dir, device=gpu)
+    results, _, _ = validate.run(data=path_to_yaml, weights=path_model, project=path_to_data_dir, device=gpu,
+                                 batch_size=8)
     shutil.rmtree(path_to_data_dir)
     return results
 

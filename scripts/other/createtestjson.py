@@ -7,8 +7,9 @@ import shutil
 
 # path_to_dataset = '/home/neptun/PycharmProjects/datasets/coco'
 path_to_dataset = '/media/alex/DAtA4/Datasets/coco'
+name_my_dataset = 'my_dataset_person_and_other'
 def make_file(p):
-    current_label = 17  #cat
+    current_label = 1  #cat
     # N = 1000
 
     with open(os.path.join(path_to_dataset, 'instances_train2017.json')) as f:
@@ -28,13 +29,14 @@ def make_file(p):
     for row in annotations:
         all_photo.append(row['image_id'])
     all_photo = list(set(all_photo))
-    N = len(all_photo)
+    # N = len(all_photo)
 
     new_annotation = []
     for row in annotations:
         if row['category_id'] == current_label and \
-                row['image_id'] in all_photo and \
-                row['area'] / dict_w_h[row['image_id']] > 0.05:
+                row['image_id'] in all_photo:
+                # row['area'] / dict_w_h[row['image_id']] > 0.05\
+
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_annotation.append(copy_row)
@@ -43,6 +45,7 @@ def make_file(p):
     for row in new_annotation:
         good_images_ids.append(row['image_id'])
     good_images_ids = list(set(good_images_ids))
+    bad_images_ids = list(set(all_photo) - set(good_images_ids))
 
     test_im = random.sample(good_images_ids, k=int(p/100 * len(good_images_ids)))
     train_im = list(set(good_images_ids) - set(test_im))
@@ -56,7 +59,7 @@ def make_file(p):
 
     for row in good_images_path:
         f1 = path_to_dataset + '/train2017/' + row
-        f2 = path_to_dataset + '/my_dataset/test/' + row
+        f2 = path_to_dataset + f'/{name_my_dataset}/test/' + row
         shutil.copyfile(f1, f2)
 
     print('zero test file {} / {}'.format(len(test_im), len(good_images_path)))
@@ -80,11 +83,11 @@ def make_file(p):
     new_razmetka = dict(annotations=new_ann, images=new_image,
                         categories=categories, info=info, licenses=licenses)
 
-    with open(os.path.join(path_to_dataset, 'my_dataset', 'labels_test', 'test.json'), 'w') as f:
+    with open(os.path.join(path_to_dataset, name_my_dataset, 'labels_test', 'test.json'), 'w') as f:
         f.write(json.dumps(new_razmetka))
 
     # trasn
-
+    train_im = train_im + bad_images_ids
     good_images_path = []
     for row in images:
         if row['id'] in train_im:
@@ -93,7 +96,7 @@ def make_file(p):
 
     for row in good_images_path:
         f1 = path_to_dataset + '/train2017/' + row
-        f2 = path_to_dataset + '/my_dataset/train/' + row
+        f2 = path_to_dataset + f'/{name_my_dataset}/train/' + row
         shutil.copyfile(f1, f2)
 
     print('zero train file {} / {}'.format(len(train_im), len(good_images_path)))
@@ -108,15 +111,14 @@ def make_file(p):
     new_ann = []
     for row in annotations:
         if row['category_id'] == current_label and \
-                row['image_id'] in train_im and \
-                row['area'] / dict_w_h[row['image_id']] > 0.05:
+                row['image_id'] in train_im:
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_ann.append(copy_row)
     new_razmetka = dict(annotations=new_ann, images=new_image,
                         categories=categories, info=info, licenses=licenses)
 
-    with open(os.path.join(path_to_dataset, 'my_dataset', 'labels_train', 'train.json'), 'w') as f:
+    with open(os.path.join(path_to_dataset, name_my_dataset, 'labels_train', 'train.json'), 'w') as f:
         f.write(json.dumps(new_razmetka))
 
 

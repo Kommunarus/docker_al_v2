@@ -87,15 +87,15 @@ def eval_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, path_to_
         else:
             return {'info': 'weight not exist'}
 
-    map_train = calc_map50(pathtoimg, pathtolabels, path_model, gpu)
+    # map_train = calc_map50(pathtoimg, pathtolabels, path_model, gpu)
     map_test = calc_map50(path_to_img_test, path_to_labels_test, path_model, gpu)
 
     if save_model:
-        return {'metrics_test': map_test, 'metrics_train': map_train,
+        return {'metrics_test': map_test,
                 'model': path_model}
     else:
         shutil.rmtree(dir_model)
-        return {'metrics_test': map_test, 'metrics_train': map_train}
+        return {'metrics_test': map_test}
 
 def eval(path_to_img_train, path_to_labels_train,
          path_to_img_val, path_to_labels_val,

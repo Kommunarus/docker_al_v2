@@ -6,7 +6,7 @@ import random
 
 def write_json(list_files, m, path_to_out, full_train_json='/home/neptun/PycharmProjects/datasets/coco/instances_train2017.json'):
 
-    current_label = 17  # cat
+    current_label = 1  # cat
 
     with open(full_train_json) as f:
         razmetka = json.load(f)

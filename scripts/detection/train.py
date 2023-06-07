@@ -126,7 +126,7 @@ def train_custom(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval, pretrai
                                    '--batch-size', '16', '--epochs', str(num_epochs),
                                    '--project', path_to_weight, '--patience', '0', '--device', str(gpu)])
     shutil.rmtree(path_root + '/'+ name_dir)
-    return path_to_weight + '/exp/weights/last.pt', path_to_weight
+    return path_to_weight + '/exp/weights/best.pt', path_to_weight
 
 def get_model(num_classes, pretrain):
     if pretrain:
@@ -223,7 +223,7 @@ def mean(x):
     return sum(x) / len(x)
 
 def sampling_uncertainty(model, pathtoimg, unlabeled_data, add, device, selection_function,
-                         quantile_min, quantile_max, type):
+                         quantile_min, quantile_max, type, selection_min):
     if selection_function in ['min', 'max', 'mean']:
         if selection_function == 'min':
             fun = min
@@ -241,10 +241,14 @@ def sampling_uncertainty(model, pathtoimg, unlabeled_data, add, device, selectio
 
     out_dict = {k: v for k, v in zip(indexs, values)}
     a = sorted(out_dict.items(), key=lambda x: x[1])
-    pp = [(row[0], row[1]) for row in a if quantile_min <= row[1] < quantile_max]
-    temp = random.sample(pp, k=min(add, len(pp)))
-    if len(temp) < add:
-        temp = temp + random.sample(list(set(a) - set(temp)), k=add - len(temp))
+    if selection_min:
+        temp = a[:add]
+    else:
+        pp = [(row[0], row[1]) for row in a if quantile_min <= row[1] < quantile_max]
+
+        temp = random.sample(pp, k=min(add, len(pp)))
+        if len(temp) < add:
+            temp = temp + random.sample(list(set(a) - set(temp)), k=add - len(temp))
 
     # temp = a[-add:]
     out_name = [unlabeled_data[k] for k, v in temp]
@@ -259,7 +263,7 @@ def calc_faster(all_img, images, pathtoimg, pathtolabels,
                 add, device,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
-                quantile_min, quantile_max, path_do_dir_model, num_epochs):
+                quantile_min, quantile_max, selection_min, path_do_dir_model, num_epochs):
     if path_model == '':
         write_to_log('start train model')
         model0 = train_model(pathtoimg, pathtolabels, pathtoimgval, pathtolabelsval,
@@ -287,7 +291,7 @@ def calc_faster(all_img, images, pathtoimg, pathtolabels,
     # methode = 'uncertainty'
     write_to_log('start uncertainty {}'.format(add))
     add_to_label_items, all_value = sampling_uncertainty(model0, pathtoimg, unlabeled_data, add, device, selection_function,
-                                              quantile_min, quantile_max, 'faster')
+                                              quantile_min, quantile_max, 'faster', selection_min)
     if save_model:
         path_model = os.path.join(path_do_dir_model, '{}.pth'.format(uuid.uuid4()))
         torch.save(model0, path_model)
@@ -300,7 +304,7 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
                 add, device,
                 path_model, batch_unlabeled, pretrain,
                 save_model, use_val_test, retrain, selection_function,
-                quantile_min, quantile_max, path_do_dir_model, num_epochs):
+                quantile_min, quantile_max, selection_min, path_do_dir_model, num_epochs):
     dir_train_custom_model = ''
     if path_model == '':
         write_to_log('start train model')
@@ -329,7 +333,7 @@ def calc_custom(all_img, images, pathtoimg, pathtolabels,
     write_to_log('start uncertainty {}'.format(add))
     add_to_label_items, all_value, path = sampling_uncertainty(path_model, pathtoimg, unlabeled_data, add, device,
                                                                selection_function,
-                                                               quantile_min, quantile_max, 'custom')
+                                                               quantile_min, quantile_max, 'custom', selection_min)
     if save_model:
         return {'data': add_to_label_items, 'model': path_model, 'all_value': all_value, 'path_to_img': path}
 
@@ -343,7 +347,7 @@ def train_api(path_to_img_train, path_to_labels_train,
               add=100, gpu='0',
               path_model='', batch_unlabeled=-1, pretrain_from_hub=True,
               save_model=False, use_val_test_in_train=True, retrain_user_model=False, bbox_selection_policy='min',
-              quantile_min=0, quantile_max=1, type_model='custom', num_epochs=10):
+              quantile_min=0, quantile_max=1, selection_min=True, type_model='custom', num_epochs=10):
     device = f"cuda:{gpu}" if torch.cuda.is_available() else "cpu"
     path_do_dir_model = '/weight'
     write_to_log(device)
@@ -356,14 +360,14 @@ def train_api(path_to_img_train, path_to_labels_train,
                 add, device,
                 path_model, batch_unlabeled, pretrain_from_hub,
                 save_model, use_val_test_in_train, retrain_user_model, bbox_selection_policy,
-                quantile_min, quantile_max, path_do_dir_model, num_epochs)
+                quantile_min, quantile_max, selection_min, path_do_dir_model, num_epochs)
     elif type_model == 'custom':
         return calc_custom(all_img, images, path_to_img_train, path_to_labels_train,
                 path_to_img_val, path_to_labels_val,
                 add, device,
                 path_model, batch_unlabeled, pretrain_from_hub,
                 save_model, use_val_test_in_train, retrain_user_model, bbox_selection_policy,
-                quantile_min, quantile_max, path_do_dir_model, num_epochs)
+                quantile_min, quantile_max, selection_min, path_do_dir_model, num_epochs)
     else:
         return {'info': 'type_model is incorrect'}
 

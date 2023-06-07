@@ -14,13 +14,13 @@ def mAP(params):
     return eval(**params)
 
 if __name__ == '__main__':
-    name_exp = 'exp_yolo_s_rnd_k_020623'
+    name_exp = f'exp/rnd/yolo_s_{datetime.datetime.now().strftime("%d%m%Y")}_person'
 
     with Live(dir=name_exp, save_dvc_exp=True) as live:
         pretrain_from_hub = False
         retrain_user_model = False
         type_model = 'custom'
-        num_epochs = 300
+        num_epochs = 100
         gpu = 0
         params_map = {
             'gpu': gpu,
@@ -47,30 +47,32 @@ if __name__ == '__main__':
         # p = [1_000, 10_000, 30_000]
         N_train = len(os.listdir('/media/alex/DAtA4/Datasets/coco/my_dataset/train'))
         # N_train = len(os.listdir('/home/neptun/PycharmProjects/datasets/coco/my_dataset/train'))
-        n_rnd = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2, N_train]
+        # n_rnd = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4, N_train // 2, N_train]
+        n_rnd = [8_000, 12_000]
+        # n_rnd = [5_000, 10_000, 15_000, 20_000]
+        live.log_param("n_rnd", n_rnd)
+
         # n_rnd = [N_train // 64]
         print(n_rnd)
         start = datetime.datetime.now()
         print(start)
         told = start
-        k = 5
+        k = 3
         L = []
-        for i in n_rnd:
-            mean = 0
-            m = []
-            for j in range(k):
+        for j in range(k):
+            for i in n_rnd:
                 make_file(i,
                           path_to_json_train='/media/alex/DAtA4/Datasets/coco/my_dataset/labels_train/train.json',
                           path_to_out='/media/alex/DAtA4/Datasets/coco/labelstrain/first.json')
 
                 out = mAP(params_map)
-                metrics_test, metrics_train, model = out['metrics_test'], out['metrics_train'], out['model']
+                metrics_test, model = out['metrics_test'], out['model']
                 live.log_metric('test/mAP50', metrics_test[2])
                 live.log_metric('test/P', metrics_test[0])
                 live.log_metric('test/R', metrics_test[1])
-                live.log_metric('train/mAP50', metrics_train[2])
-                live.log_metric('train/P', metrics_train[0])
-                live.log_metric('train/R', metrics_train[1])
+                # live.log_metric('train/mAP50', metrics_train[2])
+                # live.log_metric('train/P', metrics_train[0])
+                # live.log_metric('train/R', metrics_train[1])
 
                 if type_model == 'custom':
                     root_p = params_map['path_to_img_train']
@@ -84,17 +86,7 @@ if __name__ == '__main__':
                 live.next_step()
 
 
-                # print(f)
-                # mean += f
-                # m.append(f)
-            L.append(mean/k)
-            # plt.scatter([i]*k, m)
-            print(i, m)
             t = datetime.datetime.now()
             print(t, t-told)
             told = t
 
-        # plt.plot(n_rnd, L)
-        # plt.grid(True)
-        # plt.show()
-    # print(L)
