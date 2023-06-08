@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="5">
+    <title>DVC Plot</title>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.2.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.18.2"></script>
+    
+    <style>
+        table {
+            border-spacing: 15px;
+        }
+    </style>
+</head>
+<body>
+    
+        <div id="params_yaml" style="text-align: center; padding: 10x">
+            <p>params_yaml</p>
+            <div style="display: flex;justify-content: center;">
+                <table>
+<thead>
+<tr><th>class dataset  </th><th>type dataset  </th><th style="text-align: right;">  length train part</th><th style="text-align: right;">  length val part</th><th style="text-align: right;">  length test part</th><th>type_model  </th><th style="text-align: right;">  num_epochs (val)</th><th>pretrain_from_hub (val)  </th><th>retrain_user_model (val)  </th><th>n_rnd                                    </th></tr>
+</thead>
+<tbody>
+<tr><td>person         </td><td>disbalance    </td><td style="text-align: right;">             113508</td><td style="text-align: right;">             1565</td><td style="text-align: right;">              3758</td><td>custom      </td><td style="text-align: right;">               100</td><td>False                    </td><td>False                     </td><td>[3547, 7094, 14188, 28377, 56754, 113508]</td></tr>
+</tbody>
+</table>
+            </div>
+        </div>
+
+        <div id="metrics_json" style="text-align: center; padding: 10x">
+            <p>metrics_json</p>
+            <div style="display: flex;justify-content: center;">
+                <table>
+<thead>
+<tr><th style="text-align: right;">  files.count_good_image</th><th style="text-align: right;">  files.raw_image</th><th style="text-align: right;">  test.mAP50</th><th style="text-align: right;">  test.P</th><th style="text-align: right;">  test.R</th><th style="text-align: right;">  step</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: right;">                    4215</td><td style="text-align: right;">            14188</td><td style="text-align: right;">    0.854443</td><td style="text-align: right;">0.812932</td><td style="text-align: right;">0.791682</td><td style="text-align: right;">     8</td></tr>
+</tbody>
+</table>
+            </div>
+        </div>
+
+    <div id = "static_test_P">
+        <script type = "text/javascript">
+            var spec = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": {"values": [{"step": "0", "P": "0.6917557345334197", "rev": "workspace"}, {"step": "1", "P": "0.7584604286928295", "rev": "workspace"}, {"step": "2", "P": "0.8005935882465136", "rev": "workspace"}, {"step": "3", "P": "0.8456391704103168", "rev": "workspace"}, {"step": "4", "P": "0.855175320722261", "rev": "workspace"}, {"step": "5", "P": "0.8944374608841572", "rev": "workspace"}, {"step": "6", "P": "0.6143038816276296", "rev": "workspace"}, {"step": "7", "P": "0.7698268636423178", "rev": "workspace"}, {"step": "8", "P": "0.8129323759009471", "rev": "workspace"}]}, "title": "test/P", "width": 300, "height": 300, "params": [{"name": "smooth", "value": 0.001, "bind": {"input": "range", "min": 0.001, "max": 1, "step": 0.001}}], "layer": [{"mark": "line", "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "P", "type": "quantitative", "title": "P", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "P", "title": "P", "type": "quantitative"}]}, "transform": [{"loess": "P", "on": "step", "groupby": ["rev", "filename", "field", "filename::field"], "bandwidth": {"signal": "smooth"}}]}, {"mark": {"type": "line", "opacity": 0.2}, "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "P", "type": "quantitative", "title": "P", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "P", "title": "P", "type": "quantitative"}]}}, {"mark": {"type": "circle", "size": 10, "tooltip": {"content": "encoding"}}, "encoding": {"x": {"aggregate": "max", "field": "step", "type": "quantitative", "title": "step"}, "y": {"aggregate": {"argmax": "step"}, "field": "P", "type": "quantitative", "title": "P", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}}}]};
+            vegaEmbed('#static_test_P', spec);
+        </script>
+    </div>
+    
+
+    <div id = "static_test_mAP50">
+        <script type = "text/javascript">
+            var spec = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": {"values": [{"step": "0", "mAP50": "0.6769659187814397", "rev": "workspace"}, {"step": "1", "mAP50": "0.7899094282838116", "rev": "workspace"}, {"step": "2", "mAP50": "0.8530003364505736", "rev": "workspace"}, {"step": "3", "mAP50": "0.8969287635046951", "rev": "workspace"}, {"step": "4", "mAP50": "0.9150612285862647", "rev": "workspace"}, {"step": "5", "mAP50": "0.9395336727882011", "rev": "workspace"}, {"step": "6", "mAP50": "0.6039472295612568", "rev": "workspace"}, {"step": "7", "mAP50": "0.8036223803871807", "rev": "workspace"}, {"step": "8", "mAP50": "0.8544428015067412", "rev": "workspace"}]}, "title": "test/mAP50", "width": 300, "height": 300, "params": [{"name": "smooth", "value": 0.001, "bind": {"input": "range", "min": 0.001, "max": 1, "step": 0.001}}], "layer": [{"mark": "line", "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "mAP50", "type": "quantitative", "title": "mAP50", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "mAP50", "title": "mAP50", "type": "quantitative"}]}, "transform": [{"loess": "mAP50", "on": "step", "groupby": ["rev", "filename", "field", "filename::field"], "bandwidth": {"signal": "smooth"}}]}, {"mark": {"type": "line", "opacity": 0.2}, "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "mAP50", "type": "quantitative", "title": "mAP50", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "mAP50", "title": "mAP50", "type": "quantitative"}]}}, {"mark": {"type": "circle", "size": 10, "tooltip": {"content": "encoding"}}, "encoding": {"x": {"aggregate": "max", "field": "step", "type": "quantitative", "title": "step"}, "y": {"aggregate": {"argmax": "step"}, "field": "mAP50", "type": "quantitative", "title": "mAP50", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}}}]};
+            vegaEmbed('#static_test_mAP50', spec);
+        </script>
+    </div>
+    
+
+    <div id = "static_test_R">
+        <script type = "text/javascript">
+            var spec = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": {"values": [{"step": "0", "R": "0.6288372153676325", "rev": "workspace"}, {"step": "1", "R": "0.7298314808174973", "rev": "workspace"}, {"step": "2", "R": "0.7996658365069982", "rev": "workspace"}, {"step": "3", "R": "0.8367757323476219", "rev": "workspace"}, {"step": "4", "R": "0.852177293823045", "rev": "workspace"}, {"step": "5", "R": "0.8719137746566932", "rev": "workspace"}, {"step": "6", "R": "0.6150950161348153", "rev": "workspace"}, {"step": "7", "R": "0.7506962561940451", "rev": "workspace"}, {"step": "8", "R": "0.7916816063105055", "rev": "workspace"}]}, "title": "test/R", "width": 300, "height": 300, "params": [{"name": "smooth", "value": 0.001, "bind": {"input": "range", "min": 0.001, "max": 1, "step": 0.001}}], "layer": [{"mark": "line", "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "R", "type": "quantitative", "title": "R", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "R", "title": "R", "type": "quantitative"}]}, "transform": [{"loess": "R", "on": "step", "groupby": ["rev", "filename", "field", "filename::field"], "bandwidth": {"signal": "smooth"}}]}, {"mark": {"type": "line", "opacity": 0.2}, "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "R", "type": "quantitative", "title": "R", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "R", "title": "R", "type": "quantitative"}]}}, {"mark": {"type": "circle", "size": 10, "tooltip": {"content": "encoding"}}, "encoding": {"x": {"aggregate": "max", "field": "step", "type": "quantitative", "title": "step"}, "y": {"aggregate": {"argmax": "step"}, "field": "R", "type": "quantitative", "title": "R", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}}}]};
+            vegaEmbed('#static_test_R', spec);
+        </script>
+    </div>
+    
+
+    <div id = "static_files_raw_image">
+        <script type = "text/javascript">
+            var spec = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": {"values": [{"step": "0", "raw_image": "3547", "rev": "workspace"}, {"step": "1", "raw_image": "7094", "rev": "workspace"}, {"step": "2", "raw_image": "14188", "rev": "workspace"}, {"step": "3", "raw_image": "28377", "rev": "workspace"}, {"step": "4", "raw_image": "56754", "rev": "workspace"}, {"step": "5", "raw_image": "113508", "rev": "workspace"}, {"step": "6", "raw_image": "3547", "rev": "workspace"}, {"step": "7", "raw_image": "7094", "rev": "workspace"}, {"step": "8", "raw_image": "14188", "rev": "workspace"}]}, "title": "files/raw_image", "width": 300, "height": 300, "params": [{"name": "smooth", "value": 0.001, "bind": {"input": "range", "min": 0.001, "max": 1, "step": 0.001}}], "layer": [{"mark": "line", "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "raw_image", "type": "quantitative", "title": "raw_image", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "raw_image", "title": "raw_image", "type": "quantitative"}]}, "transform": [{"loess": "raw_image", "on": "step", "groupby": ["rev", "filename", "field", "filename::field"], "bandwidth": {"signal": "smooth"}}]}, {"mark": {"type": "line", "opacity": 0.2}, "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "raw_image", "type": "quantitative", "title": "raw_image", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "raw_image", "title": "raw_image", "type": "quantitative"}]}}, {"mark": {"type": "circle", "size": 10, "tooltip": {"content": "encoding"}}, "encoding": {"x": {"aggregate": "max", "field": "step", "type": "quantitative", "title": "step"}, "y": {"aggregate": {"argmax": "step"}, "field": "raw_image", "type": "quantitative", "title": "raw_image", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}}}]};
+            vegaEmbed('#static_files_raw_image', spec);
+        </script>
+    </div>
+    
+
+    <div id = "static_files_count_good_image">
+        <script type = "text/javascript">
+            var spec = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": {"values": [{"step": "0", "count_good_image": "1039", "rev": "workspace"}, {"step": "1", "count_good_image": "2029", "rev": "workspace"}, {"step": "2", "count_good_image": "4295", "rev": "workspace"}, {"step": "3", "count_good_image": "8554", "rev": "workspace"}, {"step": "4", "count_good_image": "16938", "rev": "workspace"}, {"step": "5", "count_good_image": "33827", "rev": "workspace"}, {"step": "6", "count_good_image": "1008", "rev": "workspace"}, {"step": "7", "count_good_image": "2135", "rev": "workspace"}, {"step": "8", "count_good_image": "4215", "rev": "workspace"}]}, "title": "files/count_good_image", "width": 300, "height": 300, "params": [{"name": "smooth", "value": 0.001, "bind": {"input": "range", "min": 0.001, "max": 1, "step": 0.001}}], "layer": [{"mark": "line", "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "count_good_image", "type": "quantitative", "title": "count_good_image", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "count_good_image", "title": "count_good_image", "type": "quantitative"}]}, "transform": [{"loess": "count_good_image", "on": "step", "groupby": ["rev", "filename", "field", "filename::field"], "bandwidth": {"signal": "smooth"}}]}, {"mark": {"type": "line", "opacity": 0.2}, "encoding": {"x": {"field": "step", "type": "quantitative", "title": "step"}, "y": {"field": "count_good_image", "type": "quantitative", "title": "count_good_image", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}, "tooltip": [{"field": "step", "title": "step", "type": "quantitative"}, {"field": "count_good_image", "title": "count_good_image", "type": "quantitative"}]}}, {"mark": {"type": "circle", "size": 10, "tooltip": {"content": "encoding"}}, "encoding": {"x": {"aggregate": "max", "field": "step", "type": "quantitative", "title": "step"}, "y": {"aggregate": {"argmax": "step"}, "field": "count_good_image", "type": "quantitative", "title": "count_good_image", "scale": {"zero": false}}, "color": {"field": "rev", "type": "nominal"}}}]};
+            vegaEmbed('#static_files_count_good_image', spec);
+        </script>
+    </div>
+    
+
+    <div id = "map50_1">
+        <script type = "text/javascript">
+            var spec = {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": {"values": [{"samples": 3547, "map": 0.6769659187814397, "rev": "workspace"}, {"samples": 7094, "map": 0.7899094282838116, "rev": "workspace"}, {"samples": 14188, "map": 0.8530003364505736, "rev": "workspace"}, {"samples": 28377, "map": 0.8969287635046951, "rev": "workspace"}, {"samples": 56754, "map": 0.9150612285862647, "rev": "workspace"}, {"samples": 113508, "map": 0.9395336727882011, "rev": "workspace"}]}, "title": "map50 for al. line 1", "width": 300, "height": 300, "mark": {"type": "point", "tooltip": {"content": "data"}}, "encoding": {"x": {"field": "samples", "type": "quantitative", "title": "map50"}, "y": {"field": "map", "type": "quantitative", "title": "samples"}, "color": {"field": "rev", "type": "nominal"}}};
+            vegaEmbed('#map50_1', spec);
+        </script>
+    </div>
+    
+</body>
+</html>

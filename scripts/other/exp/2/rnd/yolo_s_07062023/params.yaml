@@ -1,0 +1,16 @@
+class dataset: person
+type dataset: disbalance
+length train part: 113508
+length val part: 1565
+length test part: 3758
+type_model: custom
+num_epochs (val): 100
+pretrain_from_hub (val): false
+retrain_user_model (val): false
+n_rnd:
+- 3547
+- 7094
+- 14188
+- 28377
+- 56754
+- 113508

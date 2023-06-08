@@ -1,0 +1,21 @@
+type_model: custom
+num_epochs (val): 100
+pretrain_from_hub (val): false
+retrain_user_model (val): false
+quantile_min (al): 0
+quantile_max (al): 0.3
+selection_min (al): true
+batch_unlabeled (al): -1
+bbox_selection_policy (al): mean
+n_al:
+- 5000
+- 1000
+- 1000
+- 1000
+- 1000
+- 1000
+- 1000
+- 1000
+- 1000
+- 1000
+- 1000

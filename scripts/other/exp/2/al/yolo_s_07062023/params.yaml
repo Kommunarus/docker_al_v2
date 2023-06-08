@@ -1,0 +1,19 @@
+class dataset: person
+type dataset: disbalance
+type_model: custom
+num_epochs (val): 100
+pretrain_from_hub (val): false
+retrain_user_model (val): false
+quantile_min (al): 0.7
+quantile_max (al): 1
+selection_min (al): false
+batch_unlabeled (al): -1
+bbox_selection_policy (al): mean
+n_al:
+- 3547
+- 7094
+- 7094
+- 7094
+- 7094
+- 7094
+- 7094

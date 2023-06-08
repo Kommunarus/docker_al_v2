@@ -1,0 +1,9 @@
+type_model: custom
+num_epochs (val): 100
+pretrain_from_hub (val): false
+retrain_user_model (val): false
+n_rnd:
+- 5000
+- 10000
+- 15000
+- 20000

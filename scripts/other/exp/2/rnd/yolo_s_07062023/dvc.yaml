@@ -1,0 +1,14 @@
+params:
+- params.yaml
+metrics:
+- metrics.json
+plots:
+- plots/metrics:
+    x: step
+- plots/custom/map50_1.json:
+    template: scatter
+    x: samples
+    y: map
+    title: map50 for al. line 1
+    x_label: map50
+    y_label: samples
