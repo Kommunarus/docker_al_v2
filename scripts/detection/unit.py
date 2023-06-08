@@ -42,7 +42,8 @@ def prepare_items_od_with_wh(path_to_img, path_to_labels):
 
             annotations = annotations + razmetka['annotations']
             images = images + razmetka['images']
-    images_short = [(row['file_name'], row['id'], row['width'], row['height']) for row in images]
+    images_short = [(row['file_name'], row['id'], row['width'], row['height'])
+                    for row in images if row['id'] in [x['image_id'] for x in annotations]]
     annotations_short = [(row['bbox'], row['image_id']) for row in annotations]
     images_short = list(set(images_short))
     return images_short, annotations_short

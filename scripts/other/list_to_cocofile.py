@@ -26,11 +26,15 @@ def write_json(list_files, m, path_to_out, full_train_json='/home/neptun/Pycharm
             new_image.append(copy_row)
 
     new_annotation = []
+    count_good_image = []
+
     for row in annotations:
         if row['category_id'] == current_label and row['image_id'] in a:
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_annotation.append(copy_row)
+            count_good_image.append(row['image_id'])
+    count_good_image = len(list(set(count_good_image)))
 
     b = []
     for row in new_annotation:
@@ -54,6 +58,9 @@ def write_json(list_files, m, path_to_out, full_train_json='/home/neptun/Pycharm
 
     with open(os.path.join(path_to_out, f'{m}.json'), 'w') as f:
         f.write(json.dumps(new_razmetka))
+
+    return count_good_image
+
 
 if __name__ == '__main__':
     list_files1 = [

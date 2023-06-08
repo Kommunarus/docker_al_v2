@@ -20,14 +20,19 @@ def make_file(N, path_to_json_train, path_to_out):
     licenses = razmetka['licenses']
 
     all_photo = []
-    for row in annotations:
-        all_photo.append(row['image_id'])
+    if True:
+        for row in images:
+            all_photo.append(row['id'])
+    else:
+        for row in annotations:
+            all_photo.append(row['image_id'])
     all_photo = list(set(all_photo))
 
     if N != -1:
         all_photo = random.sample(all_photo, k=N)
 
     new_annotation = []
+    count_good_image = []
     for row in annotations:
         if row['category_id'] == current_label and \
                 row['image_id'] in all_photo:
@@ -36,7 +41,8 @@ def make_file(N, path_to_json_train, path_to_out):
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_annotation.append(copy_row)
-
+            count_good_image.append(row['image_id'])
+    count_good_image = len(list(set(count_good_image)))
     new_image = []
 
     for row in images:
@@ -50,6 +56,8 @@ def make_file(N, path_to_json_train, path_to_out):
 
     with open(path_to_out, 'w') as f:
         f.write(json.dumps(new_razmetka))
+
+    return count_good_image
 
 if __name__ == '__main__':
     make_file(1000,

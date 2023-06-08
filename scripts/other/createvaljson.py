@@ -22,6 +22,10 @@ def make_file(N):
     info = razmetka['info']
     licenses = razmetka['licenses']
 
+    dict_w_h = {}
+    for row in images:
+        dict_w_h[row['id']] = row['height'] * row['width']
+
     all_photo = []
     for row in annotations:
         all_photo.append(row['image_id'])
@@ -34,7 +38,8 @@ def make_file(N):
     for row in annotations:
         iii = [x for x in images if x['id'] == row['image_id']][0]
         if row['category_id'] == current_label and \
-                row['image_id'] in all_photo:
+                row['image_id'] in all_photo and \
+                row['area'] / dict_w_h[row['image_id']] > 0.05:
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_annotation.append(copy_row)

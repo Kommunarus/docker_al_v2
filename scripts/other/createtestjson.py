@@ -34,8 +34,8 @@ def make_file(p):
     new_annotation = []
     for row in annotations:
         if row['category_id'] == current_label and \
-                row['image_id'] in all_photo:
-                # row['area'] / dict_w_h[row['image_id']] > 0.05\
+                row['image_id'] in all_photo and \
+                row['area'] / dict_w_h[row['image_id']] > 0.05:
 
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
@@ -111,7 +111,8 @@ def make_file(p):
     new_ann = []
     for row in annotations:
         if row['category_id'] == current_label and \
-                row['image_id'] in train_im:
+                row['image_id'] in train_im and \
+                row['area'] / dict_w_h[row['image_id']] > 0.05:
             copy_row = copy.deepcopy(row)
             copy_row['segmentation'] = []
             new_ann.append(copy_row)
