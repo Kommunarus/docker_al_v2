@@ -251,8 +251,8 @@ def sampling_uncertainty(model, pathtoimg, unlabeled_data, add, device, selectio
         pp = [(row[0], row[1]) for row in a if quantile_min <= row[1] < quantile_max]
 
         temp = random.sample(pp, k=min(add, len(pp)))
-        if len(temp) < add:
-            temp = temp + random.sample(list(set(a) - set(temp)), k=add - len(temp))
+    if len(temp) < add:
+        temp = temp + random.sample(list(set(a) - set(temp)), k=add - len(temp))
 
     # temp = a[-add:]
     out_name = [unlabeled_data[k] for k, v in temp]

@@ -39,9 +39,19 @@ def mAP(params):
     return eval(**params)
 
 if __name__ == '__main__':
-    number_experiment = 2
-    name_exp = f'exp/{number_experiment}/al/yolo_s_{datetime.datetime.now().strftime("%d%m%Y")}'
-    name_my_dataset = 'my_dataset_person_and_other'
+    number_experiment = 3
+    class_data = 17
+
+    f1 = f'exp/{number_experiment}/al'
+    name_e = f'yolo_s_{datetime.datetime.now().strftime("%d%m%Y")}'
+    if os.path.exists(f1):
+        all_dir = os.listdir(f1)
+        k = sum([1 for name in all_dir if name.find(name_e) > -1])
+    else:
+        k = 0
+
+    name_exp = f'exp/{number_experiment}/al/yolo_s_{datetime.datetime.now().strftime("%d%m%Y")}_{k}'
+    name_my_dataset = 'my_dataset_cat'
 
     with Live(dir=name_exp, save_dvc_exp=True) as live:
         type_model = 'custom'
@@ -51,8 +61,8 @@ if __name__ == '__main__':
         pretrain_from_hub = False
         batch_unlabeled = -1
         bbox_selection_policy = 'mean'
-        selection_min = False
-        selection_max = True
+        selection_min = True
+        selection_max = False
         quantile_min = 0.7
         quantile_max = 1
         gpu = 1
@@ -72,8 +82,8 @@ if __name__ == '__main__':
             'num_epochs': num_epochs
 
         }
-        live.log_param("class dataset", 'person')
-        live.log_param("type dataset", 'disbalance')
+        live.log_param("class dataset", 'cat')
+        live.log_param("type dataset", 'balance')
 
         live.log_param("type_model", params_map['type_model'])
         live.log_param("num_epochs (val)", params_map['num_epochs'])
@@ -103,6 +113,7 @@ if __name__ == '__main__':
         live.log_param("quantile_min (al)", params_al['quantile_min'])
         live.log_param("quantile_max (al)", params_al['quantile_max'])
         live.log_param("selection_min (al)", params_al['selection_min'])
+        live.log_param("selection_max (al)", params_al['selection_max'])
         live.log_param("batch_unlabeled (al)", params_al['batch_unlabeled'])
         live.log_param("bbox_selection_policy (al)", params_al['bbox_selection_policy'])
 
@@ -113,7 +124,7 @@ if __name__ == '__main__':
         path_to_json_train = f'/media/alex/DAtA4/Datasets/coco/{name_my_dataset}/labels_train/train.json'
 
         N_train = len(os.listdir(path_to_img_train))
-        n_al = [N_train // 32] + [N_train // 32] * 6
+        n_al = [N_train // 32] + [N_train // 32] * 20
         # n_al = [N_train // 64, N_train // 32, N_train // 16, N_train // 8, N_train // 4]
         # n_al = [5_000, ] + [1_000, ] * 10
         live.log_param('n_al', n_al)
@@ -124,25 +135,25 @@ if __name__ == '__main__':
         print(start)
         told = start
 
-        for i in range(3):
+        for i in range(15):
             datapoints = []
 
             files_in_labels = os.listdir(path_to_labels_train)
             for file in files_in_labels:
                 os.remove(os.path.join(path_to_labels_train, file))
-                count_good_image = make_file(n_al[0],
-                      path_to_json_train=path_to_json_train,
-                      path_to_out=os.path.join(path_to_labels_train, 'first.json'))
-                live.log_metric('files/count_good_image', count_good_image)
-                live.log_metric('files/raw_image', n_al[0])
+            count_good_image = make_file(n_al[0],
+                  path_to_json_train=path_to_json_train,
+                  path_to_out=os.path.join(path_to_labels_train, 'first.json'), class_data=class_data)
+            live.log_metric('files/count_good_image', count_good_image)
+            live.log_metric('files/raw_image', n_al[0])
 
             for kk in range(1, len(n_al)):
                 out = mAP(params_map)
                 metrics_test, model = out['metrics_test'], out['model']
                 if type_model == 'custom':
                     live.log_metric('test/mAP50', metrics_test[2])
-                    live.log_metric('test/P', metrics_test[0])
-                    live.log_metric('test/R', metrics_test[1])
+                    # live.log_metric('test/P', metrics_test[0])
+                    # live.log_metric('test/R', metrics_test[1])
 
                     datapoints.append({'samples': sum(n_al[:kk]), 'map': metrics_test[2]})
 
@@ -153,6 +164,7 @@ if __name__ == '__main__':
                     count_good_image = write_json(delta,
                                                   kk,
                                                   path_to_out=path_to_labels_train,
+                                                  class_data=class_data,
                                                   full_train_json=path_to_json_train)
 
                     fig, ax = plt.subplots()
@@ -161,17 +173,10 @@ if __name__ == '__main__':
                     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
                     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
 
-                    live.log_image(f"distribution_{kk}.png", data)
+                    live.log_image(f"distribution_{i}_{kk}.png", data)
                     live.log_metric('files/count_good_image', count_good_image)
                     live.log_metric('files/raw_image', n_al[kk])
 
-                    # for n_im in range(5):
-                    #     if type_model == 'fasterrcnn':
-                    #         live.log_image(f"unlabeles_{kk}_{n_im}.png", os.path.join(path_to_img_train,
-                    #                                                                random.choice(delta)))
-                    #     else:
-                    #         live.log_image(f"unlabeles_{kk}_{n_im}.png", os.path.join(path_to_img, 'exp',
-                    #                                                                random.choice(delta)))
                     if type_model == 'custom':
                         shutil.rmtree(path_to_img)
 
@@ -181,6 +186,7 @@ if __name__ == '__main__':
                 told = t
 
                 live.next_step()
+
             live.log_plot(
                 f'map50_{i+1}',
                 datapoints,

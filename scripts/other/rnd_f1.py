@@ -83,9 +83,15 @@ if __name__ == '__main__':
 
                 metrics_test, model = out['metrics_test'], out['model']
                 live.log_metric('test/mAP50', metrics_test[2])
-                live.log_metric('test/P', metrics_test[0])
-                live.log_metric('test/R', metrics_test[1])
+                # live.log_metric('test/P', metrics_test[0])
+                # live.log_metric('test/R', metrics_test[1])
                 datapoints.append({'samples': i, 'map': metrics_test[2]})
+
+                t = datetime.datetime.now()
+                # print(t, t - told)
+                live.log_metric('time', (t - told).seconds / 60)
+
+                told = t
 
                 live.next_step()
 
@@ -99,7 +105,4 @@ if __name__ == '__main__':
                 y_label="samples",
                 x_label="map50"
             )
-            t = datetime.datetime.now()
-            print(t, t-told)
-            told = t
 
